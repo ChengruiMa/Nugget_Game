@@ -36,6 +36,8 @@ parseArgs(int argc, char* argv[], int* storedSeed, char* map)
         fprintf(stderr, "Incorrect map filepath, could not read file: %s\n", argv[1]);
         return 2; // return 2 to indicate map file not found
     }
+    // close file
+    fclose(mapFile);
 
     // store map file path
     strcpy(map, argv[1]); // TODO: check if this handles memory correctly
@@ -55,5 +57,19 @@ main(int argc, char* argv[])
     if (parseArgsReturnCode != 0) {
         fprintf(stderr, "Exiting server with return code: %d\n", parseArgsReturnCode);
         return parseArgsReturnCode;
+    }
+
+    // generate random map using seed phrase if provided
+    if (seed != -1) {
+        srand(seed);
+    } else {
+        srand(getpid());
+    }
+
+    // load map file
+    FILE* mapFile = fopen(map, "r"); // already checked if file is able to be read in parseArgs, but check again
+    if (mapFile == NULL) {
+        fprintf(stderr, "Error reading map file: %s\n", mapFile);
+        return 4; // return 4 to indicate error reading map file
     }
 }
