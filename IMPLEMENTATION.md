@@ -85,6 +85,56 @@ static int parseArgs(const int argc, char* argv[]);
 
 ---
 
+### Data Structures
+
+In addition to the CS50 data structures, we leverage those defined in the 'Grid,' 'Player,' 'Gold,' and 'Game State' modules (`grid_t`, `player_t`, `gold_t`, and `game_t`). We use the game state structure to keep track of the current game state, including the grid, players, and gold piles.
+
+### Function Prototypes
+
+#### parseArgs
+
+A function to parse the command-line arguments, ensure validity, and store the parsed values in memory.
+
+```c
+static int parseArgs(const int argc, char* argv[]);
+```
+
+#### initGame
+
+A function to initialize the game state and distribute gold piles of various amounts randomly across the map (grid).
+
+```c
+static game_t* initGame(FILE* map)
+```
+
+#### handleMessage
+
+A function to handle incoming messages from clients and response/act accordingly (e.g., move player, pick up gold, etc.). This function is passed to the message module's `message_loop` function as an argument, which expects a non-null return value on success.
+
+```c
+static bool handleMessage(void* arg, const addr_t from, const char* message)
+```
+
+#### endGame
+
+A function to end the game and perform any necessary cleanup. Ending the game involves handling the final end-state logic, such as determining the winner, sending final messages to clients, and freeing memory. This function expects a pointer to the game state structure as an argument.
+
+```c
+static void endGame(game_t* game)
+```
+
+#### main
+
+The main function of the server program, which calls `parseArgs` to validate the arguments passed, calls the random number generator to seed the game (with the provided seed or the process ID), initializes the game state with the `initGame` function, initialize the network, prints the port, and starts the message loop to handle incoming messages from clients.
+
+```c
+int main(int argc, char* argv[])
+```
+
+### Detailed Pseudo Code
+
+> TODO: Add detailed pseudo code for each function.
+
 ## Map Module
 
 ### Data Structures
