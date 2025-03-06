@@ -133,7 +133,83 @@ int main(int argc, char* argv[])
 
 ### Detailed Pseudo Code
 
-> TODO: Add detailed pseudo code for each function.
+#### `parseArgs`:
+
+	validate commandline
+	if seed provided
+		verify it is a valid seed number
+		store seed in memory
+	verify map file can be opened for reading
+	store map filepath in memory
+
+---
+
+#### `initGame`:
+
+	validate map file
+	create a new game state structure w/ the provided map
+	distribute gold piles randomly across the map
+	return the game state
+
+---
+
+#### `handleMessage`:
+
+	parse the incoming message (split on spaces)
+	switch on the message type
+		case 'PLAY':
+			call the play function with the address of the client (`from_addr`)
+		case 'KEY':
+			call the key function with the tokens from the message and the address of the client (`from_addr`)
+		case 'SPECTATE':
+			call the spectate function with the address of the client (`from_addr`)
+		case message type not recognized:
+			send error message to the client in the format 'ERROR <explanation>'
+	
+	if game has ended
+		send quit messages to all clients (players and spectators) in the format 'QUIT GAME OVER:\n <leaderboard>'
+
+		return true, end the message loop
+	
+	calculate visibility for all players in the game, updating their grids
+	send the updated grid to all players in the format 'GRID nrows ncols'
+	
+	send the updated gold data to all players in the format 'GOLD n p r'
+
+	send updated 'all-seeing' grid to spectator
+	send updated gold data to spectator in the format 'GOLD 0 0 r' where r is the number of remaining gold nuggets
+
+---
+
+#### `endGame`:
+
+	if game state is null (already ended)
+		return
+	
+	call the end game function of the game state module
+
+---
+
+#### `main`:
+
+	parse command-line arguments
+	if seed provided
+		seed the random number generator with the provided seed
+	else
+		seed the random number generator with the process ID
+	
+	open the map file
+	initialize the game state
+	initialize the network
+	output the port number
+	if port is 0
+		print error message to stderr and exit
+	start the message loop
+
+	once message loop ends
+	call `endGame` to end the game, freeing game state memory
+
+---
 
 ## Map Module
 
