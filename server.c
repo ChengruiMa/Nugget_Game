@@ -10,6 +10,8 @@
 #include <ctype.h>
 #include <string.h>
 
+#include "message.h"
+
 int
 parseArgs(int argc, char* argv[], int* storedSeed, char* map)
 {
@@ -45,6 +47,27 @@ parseArgs(int argc, char* argv[], int* storedSeed, char* map)
     return 0; // return 0 to indicate successful parsing
 }
 
+/**
+* Initializes game state
+* 
+* pretty sure this should create/return a game state struct (or pointer to one) — need to define this struct in the gamestate module's header file
+*
+* Inputs:
+* @param map: a pointer to the opened map FILE with map information to be read
+*/
+int
+init_game(FILE* map) 
+{
+    if (map == NULL) {
+        fprintf(stderr, "Error reading map file\n");
+        return 4; // return 4 to indicate error reading map file
+    }
+
+    // create game state here?
+
+    // drop gold across map in various piles (at least GoldMinNumPiles and at most GoldMaxNumPiles); random number of nuggets in each (this is handled in the gold module i'm p sure)
+}
+
 int
 main(int argc, char* argv[])
 {
@@ -72,4 +95,18 @@ main(int argc, char* argv[])
         fprintf(stderr, "Error reading map file: %s\n", mapFile);
         return 4; // return 4 to indicate error reading map file
     }
+
+    // initialize game state
+
+    // close map file
+    fclose(mapFile);
+
+    // initialize network and announce port number (handled by message module)
+    int port = message_init(stderr);
+    if (port == 0) {
+        fprintf(stderr, "Failed to initialize server. Possibly no open ports?\n");
+        return 5; // return 5 to indicate error initializing server
+    }
+
+    // wait for messages from clients (start a loop listening for messages)
 }
