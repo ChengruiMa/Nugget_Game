@@ -169,39 +169,6 @@ void player_delete(player_t* player);
 
 ## Server
 
-### Data structures
-
-> For each new data structure, describe it briefly and provide a code block listing the `struct` definition(s).
-> No need to provide `struct` for existing CS50 data structures like `hashtable`.
-
-### Definition of function prototypes
-
-> For function, provide a brief description and then a code block with its function prototype.
-> For example:
-
-A function to parse the command-line arguments, initialize the game struct, initialize the message module, and (BEYOND SPEC) initialize analytics module.
-
-```c
-static int parseArgs(const int argc, char* argv[]);
-```
-### Detailed pseudo code
-
-> For each function write pseudocode indented by a tab, which in Markdown will cause it to be rendered in literal form (like a code block).
-> Much easier than writing as a bulleted list!
-> For example:
-
-#### `parseArgs`:
-
-	validate commandline
-	verify map file can be opened for reading
-	if seed provided
-		verify it is a valid seed number
-		seed the random-number generator with that seed
-	else
-		seed the random-number generator with getpid()
-
----
-
 ### Data Structures
 
 In addition to the CS50 data structures, we leverage those defined in the 'Grid,' 'Player,' 'Gold,' and 'Game State' modules (`grid_t`, `player_t`, `gold_t`, and `game_t`). We use the game state structure to keep track of the current game state, including the grid, players, and gold piles.
