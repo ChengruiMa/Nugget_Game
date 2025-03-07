@@ -1,4 +1,6 @@
-# IMPLEMENTATION.md
+# CS50 Nuggets
+## Implementation Spec
+### Team 11, Winter, 2025
 
 ## Plan for division of labor
 
