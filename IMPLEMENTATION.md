@@ -173,7 +173,29 @@ void player_delete(player_t* player);
 
 ### Data Structures
 
-In addition to the CS50 data structures, we leverage those defined in the 'Grid,' 'Player,' 'Gold,' and 'Game State' modules (`grid_t`, `player_t`, `gold_t`, and `game_t`). We use the game state structure to keep track of the current game state, including the grid, players, and gold piles.
+In addition to the CS50 data structures, we leverage those defined in the Grid and Player modules (`grid_t`, `player_t`), as well as our `gold_t`, and `game_t` structures. We use the game state structure to keep track of the current game state, including the grid, players, and gold piles.
+
+`gold_t`: A structure to represent a gold pile on the grid.
+
+```c
+typedef struct gold {
+	int* counter;
+	int piles; // number of piles
+	int index; // where
+} gold_t;
+```
+
+`game_t`: A structure to represent the game state.
+
+```c
+typedef struct game {
+	grid_t* grid;       // the master game grid
+	playerList_t* players; // list of players
+	spectator_t*: spectator; // single spectator
+	int players_seen; // number of players seen (i.e., both joined or left)
+	gold_t* gold; // all gold piles in game
+} game_t;
+```
 
 ### Function Prototypes
 
