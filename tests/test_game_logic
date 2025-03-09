@@ -1,0 +1,133 @@
+/*
+ * test_gamemodel.c
+ *
+ * Unit tests for the game logic module.
+ *
+ * This file tests:
+ *  - game_new: Creating a game from a sample map file and scanning for gold.
+ *  - game_add_player and game_move_player: Adding a player and moving them onto a gold pile.
+ *  - game_update_gold: Collecting gold when a player lands on a gold pile.
+ *  - game_is_over: Detecting when all gold has been collected.
+ *
+ * Note: This test assumes that the map module, player module, and game logic module
+ *       are implemented as specified.
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include "gamemodel.h"
+#include "map.h"
+#include "player.h"
+
+// Helper: Create a simple sample map file with a fixed size and a gold marker.
+// The map is 10 rows x 20 columns. Border cells are '+', interior cells are '.' except
+// for one gold marker ('*') placed at (5,10).
+void create_sample_map(const char* filename) {
+    FILE* fp = fopen(filename, "w");
+    assert(fp != NULL);
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 20; j++) {
+            if (i == 0 || i == 9 || j == 0 || j == 19) {
+                fputc('+', fp);
+            } else if (i == 5 && j == 10) {
+                fputc('*', fp);
+            } else {
+                fputc('.', fp);
+            }
+        }
+        fputc('\n', fp);
+    }
+    fclose(fp);
+}
+
+void test_game_new_and_gold() {
+    const char* map_file = "test_map.txt";
+    create_sample_map(map_file);
+    game_t* game = game_new(map_file);
+    assert(game != NULL);
+    // Verify grid dimensions (we assume fixed dimensions: 10x20)
+    assert(grid_getRows(game->grid) == 10);
+    assert(grid_getCols(game->grid) == 20);
+    // Check that at least one gold pile was detected (gold marker at (5,10)).
+    int found_gold = 0;
+    for (int i = 0; i < game->num_gold_piles; i++) {
+        if (game->gold_piles[i].row == 5 && game->gold_piles[i].col == 10) {
+            found_gold = 1;
+            // Should have the default gold amount.
+            assert(game->gold_piles[i].amount == 10);
+        }
+    }
+    assert(found_gold);
+    game_free(game);
+    remove(map_file);
+    printf("test_game_new_and_gold passed\n");
+}
+
+void test_game_add_and_move_player() {
+    const char* map_file = "test_map.txt";
+    create_sample_map(map_file);
+    game_t* game = game_new(map_file);
+    assert(game != NULL);
+    
+    // Add a player.
+    bool added = game_add_player(game, "Alice", "addr1");
+    assert(added);
+    assert(game->num_players == 1);
+    player_t* p = game->players[0];
+    
+    // Move player to the gold location (5,10).
+    bool moved = game_move_player(game, p, 5, 10);
+    assert(moved);
+    
+    // Before collecting gold, record the player's purse.
+    int purse_before = p->purse;
+    game_update_gold(game);
+    
+    // After update, the player's purse should increase by 10 (the default gold amount).
+    assert(p->purse == purse_before + 10);
+    
+    // Also, the corresponding gold pile should be depleted (amount set to 0).
+    for (int i = 0; i < game->num_gold_piles; i++) {
+        if (game->gold_piles[i].row == 5 && game->gold_piles[i].col == 10) {
+            assert(game->gold_piles[i].amount == 0);
+        }
+    }
+    
+    game_free(game);
+    remove(map_file);
+    printf("test_game_add_and_move_player passed\n");
+}
+
+void test_game_over() {
+    const char* map_file = "test_map.txt";
+    create_sample_map(map_file);
+    game_t* game = game_new(map_file);
+    assert(game != NULL);
+    
+    // Add a player and move onto the gold pile.
+    bool added = game_add_player(game, "Bob", "addr2");
+    assert(added);
+    player_t* p = game->players[0];
+    bool moved = game_move_player(game, p, 5, 10);
+    assert(moved);
+    game_update_gold(game);
+    
+    // For testing, manually set total_gold to 0.
+    game->total_gold = 0;
+    bool over = game_is_over(game);
+    assert(over);
+    
+    game_free(game);
+    remove(map_file);
+    printf("test_game_over passed\n");
+}
+
+int main() {
+    test_game_new_and_gold();
+    test_game_add_and_move_player();
+    test_game_over();
+    printf("All gamemodel tests passed!\n");
+    return 0;
+}
