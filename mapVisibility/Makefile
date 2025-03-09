@@ -1,4 +1,4 @@
-# Makefile for the modules in common directory for CS50 TSE
+# Makefile for the map and visibility module for CS50 nuggets game
 # Team 11, Winter 2025
 # Mar 8, 2025
 
