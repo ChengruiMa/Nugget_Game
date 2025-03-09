@@ -36,6 +36,7 @@ typedef struct gold {
 // global variables
 const int maxPlayers = 4;
 const int maxSpectators = 1;
+const int maxRealNameLength = 20;
 
 static int
 parseArgs(int argc, char* argv[], int* storedSeed, char* map)
@@ -175,6 +176,24 @@ freeMessage(char** message)
     free(message); // free array
 }
 
+void
+sendOK(player_t* player)
+{
+    char* message = malloc(sizeof("OK ") + sizeof(player->letter) + 2); // +1 for null terminator, +1 for new line
+    if (message == NULL) {
+        fprintf(stderr, "Error sending OK message to player\n");
+        return;
+    }
+
+    strcpy(message, "OK ");
+    strcat(message, player->letter);
+
+    // send OK w/ player letter to player
+    message_send(player->address, message);
+
+    free(message);
+}
+
 bool
 handleMessage(void* arg, const addr_t from, const char* message)
 {
@@ -221,11 +240,53 @@ handleMessage(void* arg, const addr_t from, const char* message)
                 // handleNewPlayer(game, from, parsed[1]);
 
                 // do we need to reset/initialize a grid for the player? I think so since player_new needs a grid
-            
+
                 int rows = game->grid->rows;
                 int cols = game->grid->cols;
 
-                char playerLetter = parsed[1][0]; // get first letter of player name
+                // BELOW CREATES PLAYER LETTER
+                // char playerLetter = 'A' + game->playersSeen; // get player letter based on number of players seen (alphabet is contiguous with ASCII character set, so we can do this)
+                
+                // make player name
+                char realName[maxRealNameLength];
+                strcpy(realName, parsed[1]); // copy player name from parsed message
+
+                // generate random starting position for player (handled by player_new according to IMPLEMENTATION SPEC, so commented out for now)
+                // point_t* start = grid_findEmptySpot(game->grid); // find empty spot on grid for player to start
+                // int x = start->x;
+                // int y = start->y;
+
+                // create new player
+                player_t* newPlayer = player_new(realName, from, game->grid); // didn't see playerLetter being created in the spec's pseudocode?
+
+                if (newPlayer == NULL) {
+                    // delete grid created for player if we created a grid above
+                    // free(start); // free start point
+                    // free(realName); // free real name
+
+                    handleMalformedMessage(from, "Message Error: Invalid player message provided", message);
+                } else {
+                    // add player to game state (THIS SHOULD BE A FUNCTION IN THE GAMESTATE MODULE @ARAL)
+                    // game->players[game->playersSeen] = newPlayer;
+                    // game->playersSeen++;
+
+                    // immediately send new client the size of the grid in the format "GRID rows cols"
+                    char* gridMessage = malloc(sizeof("GRID ") + sizeof(rows) + sizeof(cols) + 2); // +1 for null terminator, +1 for space
+                    if (gridMessage == NULL) {
+                        fprintf(stderr, "Error sending grid size to new player\n");
+                        return true; // true ends the message loop
+                    }
+                    
+                    strcpy(gridMessage, "GRID ");
+                    strcat(gridMessage, rows);
+                    strcat(gridMessage, " ");
+                    strcat(gridMessage, cols);
+
+                    message_send(from, gridMessage);
+                    sendOK(newPlayer); // send OK message to new player
+                }
+
+
             } else {
                 handleMalformedMessage(from, "Message Error: Incorrect number of arguments for command, 'PLAY'", message);
             }
