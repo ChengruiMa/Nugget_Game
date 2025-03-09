@@ -1,0 +1,204 @@
+/*
+* map.h - header file for CS50 Nuggets 'map' module
+*
+ * A map is a grid of characters representing a game board.
+ * It provides functionality to create, load, manipulate and
+ * query a 2D grid for the game.
+ * A point struct with its corresponding getter, deleter functions is also provided.
+* 
+* Team 11, Winter 2025
+* Mar 8, 2025
+*/
+
+#ifndef __MAP_H
+#define __MAP_H
+
+#include <stdio.h>
+#include <stdbool.h>
+
+/**************** Global constants ****************/
+extern const char GRID_EMPTY_SPOT;     
+extern const char GRID_PASSAGE_SPOT;    
+extern const char GRID_HORIZONTAL_WALL; 
+extern const char GRID_VERTICAL_WALL;  
+extern const char GRID_CORNER_WALL;     
+extern const char GRID_GOLD_SPOT;      
+
+/**************** Global types ****************/
+/* Point structure to represent a position on the grid */
+typedef struct point point_t;
+
+/* Grid structure to represent the game map*/
+typedef struct grid grid_t;
+
+
+/**************** Public Functions ****************/
+
+/**************** Grid operations ****************/
+
+/*
+* Create a new grid with the given dimensions
+* 
+* Caller provides:
+*   Number of rows and columns (both positive)
+* We return:
+*   Pointer to a new grid, or NULL if error
+* Caller is responsible for:
+*   Later calling grid_delete
+*/
+grid_t* grid_new(int nrows, int ncols);
+
+/*
+* Delete a grid and free all associated memory
+* 
+* Caller provides:
+*   Valid pointer to a grid
+*   If grid is Null, we do nothing
+* We return:
+*   true if successful, false otherwise
+*/
+bool grid_delete(grid_t* grid);
+
+/*
+* Load grid data from a file
+* 
+* Caller provides:
+*   Valid pointer to an initialized grid
+*   Valid file pointer to a map file
+* We return:
+*   true if successful, false otherwise
+*/
+bool grid_load(grid_t* grid, FILE* fp);
+
+/*
+* Get the character at a specific grid position
+* 
+* Caller provides:
+*   Valid pointer to a grid
+*   Row and column indices
+* We return:
+*   Character at the specified position, or '\0' if invalid
+*/
+char grid_get(grid_t* grid, int row, int col);
+
+/*
+* Set a character at a specific grid position
+* 
+* Caller provides:
+*   Valid pointer to a grid
+*   Row and column indices
+*   Character to set
+* We return:
+*   true if successful, false if invalid position or grid
+*/
+bool grid_set(grid_t* grid, int row, int col, char ch);
+
+/*
+* Check if a position is within a room
+* 
+* Caller provides:
+*   Valid pointer to a grid
+*   Row and column indices
+* We return:
+*   true if position is in a room (empty or has gold), false otherwise
+*/
+bool grid_isRoom(grid_t* grid, int row, int col);
+
+/*
+* Check if a position is a passage
+* 
+* Caller provides:
+*   Valid pointer to a grid
+*   Row and column indices
+* We return:
+*   true if position is a passage, false otherwise
+*/
+bool grid_isPassage(grid_t* grid, int row, int col);
+
+/*
+* Find a random empty spot in the grid
+* 
+* Caller provides:
+*   Valid pointer to a grid
+* We return:
+*   Pointer to a new point structure with coordinates of a random empty spot
+*   NULL if no empty spots or error
+* Caller is responsible for later calling point_delete
+*/
+point_t* grid_findEmptySpot(grid_t* grid);
+
+/*
+* Convert grid to a string representation
+* 
+* Caller provides:
+*   Valid pointer to a grid
+* We return:
+*   Malloc'd string containing the grid layout with newlines
+*   NULL if error
+* Caller is responsible for later calling free on the returned string
+*/
+char* grid_toString(grid_t* grid);
+
+/*
+* Get the number of rows in the grid
+* 
+* Caller provides:
+*   Valid pointer to a grid
+* We return:
+*   Number of rows, or -1 if error
+*/
+int grid_getRows(grid_t* grid);
+
+/*
+* Get the number of columns in the grid
+* 
+* Caller provides:
+*   Valid pointer to a grid
+* We return:
+*   Number of columns, or -1 if error
+*/
+int grid_getCols(grid_t* grid);
+
+/**************** Point operations ****************/
+
+/*
+* Create a new point with given coordinates
+* 
+* Caller provides:
+*   Row and column indices
+* We return:
+*   Pointer to a new point, or NULL if error
+* Caller is responsible for later calling point_delete
+*/
+point_t* point_new(int row, int col);
+
+/*
+* Delete a point and free associated memory
+* 
+* Caller provides:
+*   Valid pointer to a point
+* The function does nothing if point is NULL
+*/
+void point_delete(point_t* point);
+
+/*
+* Get the row coordinate of a point
+* 
+* Caller provides:
+*   Valid pointer to a point
+* We return:
+*   Row coordinate, or -1 if error
+*/
+int point_getRow(point_t* point);
+
+/*
+* Get the column coordinate of a point
+* 
+* Caller provides:
+*   Valid pointer to a point
+* We return:
+*   Column coordinate, or -1 if error
+*/
+int point_getCol(point_t* point);
+
+#endif // __MAP_H
