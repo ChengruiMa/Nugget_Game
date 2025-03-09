@@ -194,6 +194,126 @@ sendOK(player_t* player)
     free(message);
 }
 
+static void
+handleKeyPress(game_t* game, const addr_t from, char key)
+{
+    // handle key press from player
+    // check if key is valid (i.e., one of the arrow keys or 'Q')
+    // if valid, move player in that direction
+    // if 'Q', remove player from game
+
+    if (game == NULL || from == NULL || key == NULL) {
+        fprintf(stderr, "Error handling key press\n");
+        return;
+    }
+
+    // get player from address (THIS SHOULD GO IN THE GAMESTATE MODULE @ARAL)
+    player_t* player = NULL;
+    for (int i = 0; i < game->playersSeen; i++) {
+        player_t* player = game->players[i];
+        if (message_eqAddr(player->address, from)) {
+            break; // here you would return the player (AS A METHOD IN GAMESTATE MDOULE @ARAL)
+        }
+    }
+
+    if (player == NULL) {
+        fprintf(stderr, "Error handling key press: could not find player with matching address in game\n");
+
+        // since no player, must be spectator
+        // handle spectator quit if key is Q
+        if (key == 'Q') {
+            handleQuit(game, from); // handleQuit should handle both player and spectator quitting
+        } else {
+            handleMalformedMessage(from, "Message Error: Invalid key message provided", key);
+        }
+        return;
+    }
+
+    // handle key press for player
+    switch (key) {
+        case 'h':
+            // move player left, if possible
+            // TODO: players might want to be updated to playerList, as outline in implementation spec
+            player_move(player, game->grid, player->row-1, player->col, game->players); // assuming row is x and col is y (TODO: THE NAMING SHOULD BE CHANGED TO X AND Y @NEAL)
+            break;
+        case 'l':
+            // move player right, if possible
+            player_move(player, game->grid, player->row+1, player->col, game->players);
+            break;
+        case 'j':
+            // move player up, if possible
+            player_move(player, game->grid, player->row, player->col+1, game->players);
+            break;
+        case 'k':
+            // move player down, if possible
+            player_move(player, game->grid, player->row, player->col-1, game->players);
+            break;
+        case 'y':
+            // move player up and left, if possible
+            player_move(player, game->grid, player->row-1, player->col+1, game->players);
+            break;
+        case 'u':
+            // move player up and right, if possible
+            player_move(player, game->grid, player->row+1, player->col+1, game->players);
+            break;
+        case 'b':
+            // move player down and left, if possible
+            player_move(player, game->grid, player->row-1, player->col-1, game->players);
+            break;
+        case 'n':
+            // move player down and right, if possible
+            player_move(player, game->grid, player->row+1, player->col-1, game->players);
+            break;
+        // now the uppercase versions of above, which act as a toggle (i.e., while loop to move in that direction until player runs into wall)
+        case 'H':
+            while(grid_isRoom(game->grid, player->row-1, player->col)) { // pretty sure `grid_isRoom` is basically isEmpty (anything that isn't a wall)
+                player_move(player, game->grid, player->row-1, player->col, game->players);
+            }
+            break;
+        case 'L':
+            while(grid_isRoom(game->grid, player->row+1, player->col)) {
+                player_move(player, game->grid, player->row+1, player->col, game->players);
+            }
+            break;
+        case 'J':
+            while(grid_isRoom(game->grid, player->row, player->col+1)) {
+                player_move(player, game->grid, player->row, player->col+1, game->players);
+            }
+            break;
+        case 'K':
+            while(grid_isRoom(game->grid, player->row, player->col-1)) {
+                player_move(player, game->grid, player->row, player->col-1, game->players);
+            }
+            break;
+        case 'Y':   
+            while(grid_isRoom(game->grid, player->row-1, player->col+1)) {
+                player_move(player, game->grid, player->row-1, player->col+1, game->players);
+            }
+            break;
+        case 'U':   
+            while(grid_isRoom(game->grid, player->row+1, player->col+1)) {
+                player_move(player, game->grid, player->row+1, player->col+1, game->players);
+            }
+            break;
+        case 'B':
+            while(grid_isRoom(game->grid, player->row-1, player->col-1)) {
+                player_move(player, game->grid, player->row-1, player->col-1, game->players);
+            }
+            break;
+        case 'N':
+            while(grid_isRoom(game->grid, player->row+1, player->col-1)) {
+                player_move(player, game->grid, player->row+1, player->col-1, game->players);
+            }
+            break;
+        case 'Q':
+            // remove player from game
+            handleQuit(game, from);
+            break;
+        default:
+            break; // not sending error messages for invalid keys, just ignoring them (think of behavior in a normal video game)
+    }
+}
+
 bool
 handleMessage(void* arg, const addr_t from, const char* message)
 {
@@ -323,7 +443,20 @@ handleMessage(void* arg, const addr_t from, const char* message)
             }
 
             break;
+        default:
+            break; // ignore invalid commands
     }
+
+    // free parsed message
+    freeMessage(parsed);
+
+    // update game state for spectator
+
+    // send updated game state to all players and spectators
+
+    // send updated golds to all players and spectators
+
+    // check if game is over (i.e., all gold has been collected)
 
 
 }
