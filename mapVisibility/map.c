@@ -44,7 +44,7 @@ char grid_get(grid_t* grid, int row, int col);
 bool grid_set(grid_t* grid, int row, int col, char ch);
 bool grid_isRoom(grid_t* grid, int row, int col);
 bool grid_isPassage(grid_t* grid, int row, int col);
-point_t* grid_findEmptySpot(grid_t* grid);
+point_t* grid_findEmptyRoomSpot(grid_t* grid);
 char* grid_toString(grid_t* grid);
 int grid_getRows(grid_t* grid);
 int grid_getCols(grid_t* grid);
@@ -205,7 +205,7 @@ bool grid_set(grid_t* grid, int row, int col, char ch)
 bool grid_isRoom(grid_t* grid, int row, int col)
 {
     char ch = grid_get(grid, row, col);
-    return (ch == GRID_EMPTY_SPOT || ch == GRID_GOLD_SPOT);
+    return (ch == '.' || ch == GRID_GOLD_SPOT);
 }
 
 /**************** grid_isPassage() ****************/
@@ -214,8 +214,8 @@ bool grid_isPassage(grid_t* grid, int row, int col)
     return (grid_get(grid, row, col) == GRID_PASSAGE_SPOT);
 }
 
-/**************** grid_findEmptySpot() ****************/
-point_t* grid_findEmptySpot(grid_t* grid)
+/**************** grid_findEmptyRoomSpot() ****************/
+point_t* grid_findEmptyRoomSpot(grid_t* grid)
 {
     if (grid == NULL || !grid->initialized) {
         return NULL;
@@ -229,26 +229,26 @@ point_t* grid_findEmptySpot(grid_t* grid)
     }
 
     // Count the total number of empty spots
-    int emptyCount = 0;
+    int emptyRoomSpot = 0;
     for (int row = 0; row < grid->nrows; row++) {
         for (int col = 0; col < grid->ncols; col++) {
-            if (grid->cells[row][col] == GRID_EMPTY_SPOT) {
-                emptyCount++;
+            if (grid->cells[row][col] == '.') {
+                emptyRoomSpot++;
             }
         }
     }
 
-    if (emptyCount == 0) {
+    if (emptyRoomSpot == 0) {
         return NULL; 
     }
 
     // Choose a random empty spot
-    int targetSpot = rand() % emptyCount;
+    int targetSpot = rand() % emptyRoomSpot;
     int currentSpot = 0;
 
     for (int row = 0; row < grid->nrows; row++) {
         for (int col = 0; col < grid->ncols; col++) {
-            if (grid->cells[row][col] == GRID_EMPTY_SPOT) {
+            if (grid->cells[row][col] == '.') {
                 if (currentSpot == targetSpot) {
                     return point_new(row, col);
                 }

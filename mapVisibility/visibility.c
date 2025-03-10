@@ -210,9 +210,12 @@ char* visibility_toString(memory_t* memory, grid_t* grid, point_t* pos)
                 // Spot is currently visible, so direclty use grid content
                 line[col] = grid_get(grid, row, col);
             } else {
-                // Spot is not currently visible, so use memory if previously seen, or space if not
+                // Spot is not currently visible, so use memory if previously seen
                 char remembered = grid_get(memory->grid, row, col);
-                if  (remembered != ' ') {
+                if (remembered == '*') {
+                    line[col] = '.';
+                }
+                else if  (remembered != ' ') {
                     line[col] = remembered;
                 }
                 else {

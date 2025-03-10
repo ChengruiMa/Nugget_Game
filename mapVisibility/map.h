@@ -125,7 +125,7 @@ bool grid_isPassage(grid_t* grid, int row, int col);
 *   NULL if no empty spots or error
 * Caller is responsible for later calling point_delete
 */
-point_t* grid_findEmptySpot(grid_t* grid);
+point_t* grid_findEmptyRoomSpot(grid_t* grid);
 
 /*
 * Convert grid to a string representation
