@@ -17,6 +17,18 @@ static int parseArgs(int argc, char *argv[], int *storedSeed, char *map);
 static game_t *initGame(FILE *map);
 bool handleMessage(void *arg, const addr_t from, const char *message);
 static void endGame(game_t *game);
+static void handleKeyPress(game_t *game, const addr_t from, char key);
+static void handleQuit(game_t *game, addr_t from);
+static void handleNewSpectator(game_t *game, addr_t from);
+static void updateSpectatorDisplay(game_t *game, spectator_t *spectator);
+static void updatePlayerDisplay(game_t *game, player_t *player);
+static void updateSpectatorGold(game_t *game);
+static void updateAllPlayerGold(game_t *game);
+static int getRemainingGold(gold_t *gold);
+static bool isGameOver(game_t *game);
+static void handleGameOver(game_t *game);
+static void handleMalformedMessage(addr_t from, char *message, char *originalMessage);
+static void sendOK(player_t *player);
 
 // structs
 typedef struct game
@@ -40,6 +52,14 @@ const int maxPlayers = 4;
 const int maxSpectators = 1;
 const int maxRealNameLength = 20;
 
+/**
+ * Parses command line arguments
+ * 
+ * Inputs:
+ * @param argc: the number of arguments provided
+ * @param argv: the array of arguments provided
+ * @param storedSeed: a pointer to the stored seed value
+ */
 static int parseArgs(int argc, char *argv[], int *storedSeed, char *map)
 {
     // check for exactly one or two parameters (2 or 3 args including the program name)
@@ -100,6 +120,12 @@ initGame(FILE *map)
     // drop gold across map in various piles (at least GoldMinNumPiles and at most GoldMaxNumPiles); random number of nuggets in each (this is handled in the gold module i'm p sure)
 }
 
+/**
+ * Ends game state
+ *
+ * Inputs:
+ * @param game: the game state to end
+ */
 static void endGame(game_t *game)
 {
     if (game == NULL)
@@ -191,7 +217,6 @@ static void handleGameOver(game_t *game)
  * Inputs:
  * @param message: the message string to be parsed
  */
-
 char **
 parseMessage(char *message)
 {
@@ -257,6 +282,12 @@ void freeMessage(char **message)
     free(message); // free array
 }
 
+/**
+ * Sends OK message to player, as per REQUIREMENTS spec
+ * 
+ * Inputs:
+ * @param player: the player to send the OK message to
+ */
 void sendOK(player_t *player)
 {
     char *message = malloc(sizeof("OK ") + sizeof(player->letter) + 2); // +1 for null terminator, +1 for new line
@@ -275,6 +306,13 @@ void sendOK(player_t *player)
     free(message);
 }
 
+/**
+ * Handles new spectator joining game
+ * 
+ * Inputs:
+ * @param game: the game state to handle new spectator joining
+ * @param from: the address of the new spectator joining
+ */
 static void
 handleNewSpectator(game_t* game, addr_t from)
 {
@@ -307,6 +345,13 @@ handleNewSpectator(game_t* game, addr_t from)
     free(message); // free message
 }
 
+/**
+ * Handles player quitting game
+ * 
+ * Inputs:
+ * @param game: the game state to handle player quitting
+ * @param from: the address of the player quitting
+ */
 void handleQuit(game_t *game, addr_t from)
 {
     if (game == NULL)
@@ -350,6 +395,13 @@ void handleQuit(game_t *game, addr_t from)
     }
 }
 
+/**
+ * Updates spectator's display with current game state on their client/screen
+ * 
+ * Inputs:
+ * @param game: the game state to update spectator display for
+ * @param spectator: the spectator to update display for
+ */
 static void updateSpectatorDisplay(game_t *game, spectator_t *spectator)
 {
     if (game == NULL || spectator == NULL)
@@ -379,6 +431,13 @@ static void updateSpectatorDisplay(game_t *game, spectator_t *spectator)
     free(display);
 }
 
+/**
+ * Updates player's display with current game state on their client/screen
+ * 
+ * Inputs:
+ * @param game: the game state to update player display for
+ * @param player: the player to update display for
+ */
 static void updatePlayerDisplay(game_t *game, player_t *player)
 {
     if (game == NULL || player == NULL)
@@ -414,6 +473,12 @@ static void updatePlayerDisplay(game_t *game, player_t *player)
     point_delete(playerPos);       // remove once grid/visibility is refactored to keep visibility contained in grid/visibility operations — should not be exposed to users of the grid module
 }
 
+/**
+ * Updates spectator's gold display by sending them a message with the current gold state
+ * 
+ * Inputs:
+ * @param game: the game state to update spectator gold display for
+ */
 static void updateSpectatorGold(game_t* game)
 {
     spectator_t* spectator = game->spectator;
@@ -440,6 +505,12 @@ static void updateSpectatorGold(game_t* game)
     free(message); // free message
 }
 
+/**
+ * Updates all player's gold display by sending them a message with the current gold state
+ * 
+ * Inputs:
+ * @param game: the game state to update all player gold display for
+ */
 static void updateAllPlayerGold(game_t* game)
 {
     player_t** players = game->players;
@@ -470,6 +541,12 @@ static void updateAllPlayerGold(game_t* game)
     }
 }
 
+/**
+ * Helper function to get the total remaining gold in the game
+ * 
+ * Inputs:
+ * @param gold: the gold state to get the remaining gold from
+ */
 static int getRemainingGold(gold_t* gold)
 {
     if (gold == NULL)
@@ -487,6 +564,12 @@ static int getRemainingGold(gold_t* gold)
     return totalRemaining;
 }
 
+/**
+ * Helper function to check if the game is over (i.e., all gold has been collected)
+ * 
+ * Inputs:
+ * @param game: the game state to check if game is over
+ */
 static bool isGameOver(game_t* game)
 {
     if (game == NULL)
@@ -504,6 +587,14 @@ static bool isGameOver(game_t* game)
     return false;
 }
 
+/**
+ * Handles individual key presses from clients (movement and quitting)
+ * 
+ * Inputs:
+ * @param game: the game state to handle key press for
+ * @param from: the address of the player sending the key press
+ * @param key: the key press sent by the player
+ */
 static void handleKeyPress(game_t *game, const addr_t from, char key)
 {
     // handle key press from player
@@ -639,6 +730,14 @@ static void handleKeyPress(game_t *game, const addr_t from, char key)
     }
 }
 
+/**
+ * Handles and parses incoming messages from clients
+ * 
+ * Inputs:
+ * @param arg: the game state to handle incoming messages for
+ * @param from: the address of the client sending the message
+ * @param message: the message string sent by the client
+ */
 bool handleMessage(void *arg, const addr_t from, const char *message)
 {
     if (arg == NULL || message == NULL)
@@ -813,6 +912,14 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
     }
 }
 
+/**
+ * Handles malformed messages by sending an error message to the client
+ * 
+ * Inputs:
+ * @param from: the address of the client to send the error message to
+ * @param error: the error message to send
+ * @param message: the original message that was malformed
+ */
 static void handleMalformedMessage(const addr_t from, char *error, char *message)
 {
     // build error message (error + message)
@@ -834,6 +941,13 @@ static void handleMalformedMessage(const addr_t from, char *error, char *message
     free(errorMessage);
 }
 
+/**
+ * Main function for server
+ * 
+ * Inputs:
+ * @param argc: the number of arguments provided
+ * @param argv: the array of arguments provided
+ */
 int main(int argc, char *argv[])
 {
     // call parseArgs
