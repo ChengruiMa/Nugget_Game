@@ -104,17 +104,85 @@ static void endGame(game_t *game)
 {
     if (game == NULL)
     {
-        fprintf(stderr, "Error freeing game state\n");
+        fprintf(stderr, "Error: Invalid game state provided in endGame\n");
         return;
     } // else do below
 
-    // free all memory allocated for game state
-    // free grid
-    // free players
-    // free spectator
-    // free gold
+    game_delete(game); // free all memory allocated for game state
+}
 
-    // wrap above cleanup in a function in gamestate module to be called here (it's cleaner)
+/**
+ * Compares two players by score (i.e., number of nuggets collected)
+ *
+ * Inputs:
+ * @param a: the first player to compare
+ * @param b: the second player to compare
+ */
+static int comparePlayers(const void *a, const void *b)
+{
+    player_t *playerA = *(player_t **)a;
+    player_t *playerB = *(player_t **)b;
+
+    return playerB->purse - playerA->purse; // sort in descending order
+}
+
+/**
+ * Handles game over operations (i.e., leaderboard, final score, etc.)
+ *
+ * Inputs:
+ * @param game: the game state to handle game over operations for
+ */
+static void handleGameOver(game_t *game)
+{
+    if (game == NULL)
+    {
+        fprintf(stderr, "Error Invalid game state provided in handleGameOver\n");
+        return;
+    }
+
+    player_t** players = game->players;
+    int playersSeen = game->playersSeen;
+
+    // sort players by score (i.e., number of nuggets collected)
+    qsort(players, playersSeen, sizeof(player_t*), comparePlayers); // need to define comparePlayers function
+
+    // create leaderboard end game message
+    char* leaderboard = malloc(((playersSeen + 1) * (sizeof(char)*maxRealNameLength)) + 50); // should be enough for message (add 1 to players seen to account for spectator)
+    if (leaderboard == NULL)
+    {
+        fprintf(stderr, "Error creating leaderboard message\n");
+        return;
+    }
+
+    strcpy(leaderboard, "QUIT GAME OVER:\n");
+    for (int i = 0; i < playersSeen; i++)
+    {
+        player_t* player = players[i];
+        char* playerScore = malloc(sizeof(char) * maxRealNameLength + 10); // should be enough for message
+        if (playerScore == NULL)
+        {
+            fprintf(stderr, "Error creating player score message\n");
+            return;
+        }
+
+        sprintf(playerScore, "%c %10d %s\n", player->playerLetter, player->purse, player->realName); // format message as per REQUIREMENTS spec
+        strcat(leaderboard, playerScore);
+        free(playerScore); // free player score message
+    }
+
+    // send leaderboard message to all players and spectators
+    for (int i = 0; i < playersSeen; i++)
+    {
+        player_t* player = players[i];
+        message_send(player->address, leaderboard);
+    }
+
+    if (game->spectator != NULL)
+    {
+        message_send(game->spectator->address, leaderboard);
+    }
+
+    free(leaderboard); // free leaderboard message
 }
 
 /**
@@ -737,8 +805,8 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
     // check if game is over (i.e., all gold has been collected)
     if (isGameOver(game))
     {
-        // end game
-        endGame(game);
+        // handle game over (leaderboards, end game state, etc.)
+        handleGameOver(game);
         return true; // true ends the message loop
     } else {
         return false; // false continues the message loop
