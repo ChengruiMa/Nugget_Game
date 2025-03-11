@@ -139,6 +139,17 @@ bool grid_isRoom(grid_t* grid, int row, int col);
 bool grid_isPassage(grid_t* grid, int row, int col);
 
 /*
+* Check if a position is a gold pile
+* 
+* Caller provides:
+*   Valid pointer to a grid
+*   Row and column indices
+* We return:
+*   true if position is a gold pile, false otherwise
+*/
+bool grid_isGold(grid_t* grid, int row, int col);
+
+/*
 * Find a random empty spot in the grid
 * 
 * Caller provides:
@@ -260,6 +271,9 @@ bool grid_isVisible(grid_t* grid, point_t* from, point_t* to);
 bool grid_isPointVisible(grid_t* grid, int row, int col);
 char* grid_visibilityToString(grid_t* grid, point_t* pos);
 void grid_updateMemory(grid_t* grid);
+
+char* grid_buildDisplayString(game_t* gameState);
+char* grid_buildPlayerDisplayString(game_t* gameState, player_t* player);
 
 
 #endif // __GRID_H

@@ -51,17 +51,22 @@ char grid_get(grid_t* grid, int row, int col);
 bool grid_set(grid_t* grid, int row, int col, char ch);
 bool grid_isRoom(grid_t* grid, int row, int col);
 bool grid_isPassage(grid_t* grid, int row, int col);
+bool grid_isGold(grid_t* grid, int row, int col);
 point_t* grid_findEmptyRoomSpot(grid_t* grid);
 char* grid_toString(grid_t* grid);
 int grid_getRows(grid_t* grid);
 int grid_getCols(grid_t* grid);
 
-/* Operations on the visibility aspects */
+/* Operations on the visibility */
 void grid_calculateVisibility(grid_t* grid, point_t* pos);
 bool grid_isVisible(grid_t* grid, point_t* from, point_t* to);
 bool grid_isPointVisible(grid_t* grid, int row, int col);
 char* grid_visibilityToString(grid_t* grid, point_t* pos);
 void grid_updateMemory(grid_t* grid);
+
+/* Printing out the game state */
+char* grid_buildDisplayString(game_t* gameState);
+char* grid_buildPlayerDisplayString(game_t* gameState, player_t* player);
 
 /* Operations on the point structure */
 point_t* point_new(int row, int col);
