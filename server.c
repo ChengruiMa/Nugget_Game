@@ -663,7 +663,7 @@ void movePlayer(game_t* game, player_t* player, int newRow, int newCol)
 
         gold_t* goldPile = game_getGoldAtPosition(game, newRow, newCol);
         if (goldPile != NULL) {
-            player_addGold(player, goldPile->amount);
+            player_addGold(player, goldPile->amount); // this should be part of the `game_collectGold` function in game module @ARAL
             goldPile->amount = 0; // this should be part of the `game_collectGold` function in game module @ARAL
             goldPile->collector = player; // this should be part of the `game_collectGold` function in game module @ARAL
         }
@@ -1083,6 +1083,7 @@ int main(int argc, char *argv[])
     }
 
     // initialize game state
+    game_t* game = initGame(mapFile);
 
     // close map file
     fclose(mapFile);
