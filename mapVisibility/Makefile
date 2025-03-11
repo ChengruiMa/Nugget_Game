@@ -2,25 +2,24 @@
 # Team 11, Winter 2025
 # Mar 8, 2025
 
-OBJS = map.o visibility.o
-LIB  = mapVisibility.a
-
-CFLAGS = -Wall -pedantic -std=c11 -ggdb
 CC = gcc
+CFLAGS = -Wall -pedantic -std=c11 -ggdb
+OBJS = map.o testing.o
+LIBS = -lm
 
 .PHONY: all clean
 
-all: $(LIB)
+all: testing
 
-$(LIB): $(OBJS)
-	ar cr $(LIB) $(OBJS)
+testing: $(OBJS)
+	$(CC) $(CFLAGS) -o testing $(OBJS) $(LIBS)
 
 map.o: map.c map.h
 	$(CC) $(CFLAGS) -c map.c
 
-visibility.o: visibility.c visibility.h map.h
-	$(CC) $(CFLAGS) -c visibility.c
+testing.o: testing.c map.h
+	$(CC) $(CFLAGS) -c testing.c
 
 clean:
-	rm -f *~ *.o
-	rm -f $(LIB)
+	rm -f testing
+	rm -f *~ *.o core

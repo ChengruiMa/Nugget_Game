@@ -201,4 +201,17 @@ int point_getRow(point_t* point);
 */
 int point_getCol(point_t* point);
 
+grid_t* grid_newWithMemory(int nrows, int ncols);
+
+
+/* Operations on the visibility aspects */
+void grid_calculateVisibility(grid_t* grid, point_t* pos);
+bool grid_isVisible(grid_t* grid, point_t* from, point_t* to);
+bool grid_isPointVisible(grid_t* grid, int row, int col);
+char* grid_visibilityToString(grid_t* grid, point_t* pos);
+void grid_resetVisibility(grid_t* grid, point_t* pos);
+void grid_updateMemory(grid_t* grid);
+grid_t* grid_createPlayerGrid(grid_t* grid);
+
+
 #endif // __MAP_H
