@@ -389,7 +389,7 @@ void handleQuit(game_t *game, addr_t from)
     }
     else
     {
-        player->left = true; // set player left to true (THIS SHOULD EXIST IN PLAYER STRUCT @NEAL (either 'left', 'isActive', 'active', or something of the nature))
+        player->leftGame = true;
         // don't remove from game state since we'll want to keep player in game state for game over operations (i.e., leaderboard, final score, etc.)
         message_send(from, "QUIT Thanks for playing!"); // send quit msg as defined in REQUIREMENTS spec
     }
