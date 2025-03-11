@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <spectater.h>
+#include <spectator.h>
 #include <player.h>
 
 /* Define a structure for a gold pile */
