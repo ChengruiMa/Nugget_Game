@@ -1,7 +1,7 @@
 /*
-* grid.c - implementation for CS50 Nuggets 'map' module with integrated visibility
+* grid.c - implementation for CS50 Nuggets 'grid' module with integrated visibility
 *
-* See map.h for detailed information about the module interface
+* See grid.h for detailed information about the module interface
 * 
 * Team 11, Winter 2025
 * Mar 10, 2025
@@ -31,7 +31,7 @@ typedef struct point {
 typedef struct grid {
     int nrows;              // number of rows
     int ncols;              // number of columns
-    char** cells;           // 2D array of characters for the entire map
+    char** cells;           // 2D array of characters for the entire grid
     char** memory;          // 2D array of characters for remembered state
     bool** visible;         // 2D array of visibility flags
     bool initialized;       // flag to indicate if grid is initialized successfully
@@ -40,7 +40,7 @@ typedef struct grid {
 
 /**************** Public functions ****************/
 /* Operations on the grid structure */
-/* For detailed descriptions, see map.h */
+/* For detailed descriptions, see grid.h */
 grid_t* grid_new(int nrows, int ncols);
 grid_t* grid_newWithMemory(int nrows, int ncols);
 grid_t* grid_createPlayerGrid(grid_t* grid);

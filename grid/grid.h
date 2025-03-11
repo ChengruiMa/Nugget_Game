@@ -1,7 +1,7 @@
 /*
-* grid.h - header file for CS50 Nuggets 'map' module
+* grid.h - header file for CS50 Nuggets 'grid' module
 *
- * A map is a grid of characters representing a game board.
+ * A grid is a grid of characters representing a game board.
  * It provides functionality to create, load, manipulate and
  * query a 2D grid for the game.
  * A point struct with its corresponding getter, deleter functions is also provided.
@@ -10,8 +10,8 @@
 * Mar 8, 2025
 */
 
-#ifndef __MAP_H
-#define __MAP_H
+#ifndef __GRID_H
+#define __GRID_H
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -28,7 +28,7 @@ extern const char GRID_GOLD_SPOT;
 /* Point structure to represent a position on the grid */
 typedef struct point point_t;
 
-/* Grid structure to represent the game map*/
+/* Grid structure to represent the game grid*/
 typedef struct grid grid_t;
 
 
@@ -87,7 +87,7 @@ bool grid_delete(grid_t* grid);
 * 
 * Caller provides:
 *   Valid pointer to an initialized grid
-*   Valid file pointer to a map file
+*   Valid file pointer to a grid file
 * We return:
 *   true if successful, false otherwise
 */
@@ -262,4 +262,4 @@ char* grid_visibilityToString(grid_t* grid, point_t* pos);
 void grid_updateMemory(grid_t* grid);
 
 
-#endif // __MAP_H
+#endif // __GRID_H

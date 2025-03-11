@@ -86,7 +86,7 @@ void test_visibility_between_points(grid_t* grid)
 {
     printf("\n===== Testing Visibility Between Points =====\n");
     
-    // Define test cases with coordinates specific to the map
+    // Define test cases
     struct {
         int fromRow, fromCol;
         int toRow, toCol;
