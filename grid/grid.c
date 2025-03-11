@@ -14,7 +14,7 @@
 #include <time.h>
 #include <math.h>
 #include "grid.h"
-#include "gold.h"
+#include "game.h"
 
 const char GRID_EMPTY_SPOT = ' ';
 const char GRID_PASSAGE_SPOT = '#';
@@ -46,7 +46,7 @@ grid_t* grid_new(int nrows, int ncols);
 grid_t* grid_newWithMemory(int nrows, int ncols);
 grid_t* grid_createPlayerGrid(grid_t* grid);
 bool grid_delete(grid_t* grid);
-bool grid_load(grid_t* grid, FILE* fp);
+grid_t* grid_loadFromFile(const char* filename, bool withMemory);
 char grid_get(grid_t* grid, int row, int col);
 bool grid_set(grid_t* grid, int row, int col, char ch);
 bool grid_isRoom(grid_t* grid, int row, int col);
@@ -286,28 +286,62 @@ bool grid_delete(grid_t* grid)
 }
 
 /**************** grid_load() ****************/
-bool grid_load(grid_t* grid, FILE* fp)
+grid_t* grid_loadFromFile(const char* filename, bool withMemory)
 {
-    if (grid == NULL || fp == NULL || !grid->initialized) {
-        return false;
+    if (filename == NULL) {
+        return NULL;
     }
 
-    // Allocate memory for each line, with newline and null terminator
-    char line[grid->ncols + 2]; 
-    int row = 0;
+    // Open the file
+    FILE* fp = fopen(filename, "r");
+    if (fp == NULL) {
+        return NULL;
+    }
 
-    // Read line by line from the file
-    while (fgets(line, sizeof(line), fp) != NULL && row < grid->nrows) {
-        // Remove newline character if present
+    // Determine dimensions (rows and columns) within the first pass
+    int nrows = 0;
+    int ncols = 0;
+    char line[1024]; // Assuming no line is extremely long (i.e. longer than 1024 characters)
+
+    while (fgets(line, sizeof(line), fp) != NULL) {
         size_t len = strlen(line);
         if (len > 0 && line[len-1] == '\n') {
             line[len-1] = '\0';
             len--;
         }
 
-        // Validate line length
-        if (len > (size_t)grid->ncols) {
-            return false; 
+        // Update maximum line length
+        if ((int)len > ncols) {
+            ncols = len;
+        }
+
+        nrows++;
+    }
+
+    // Reset file position to the beginning
+    rewind(fp);
+
+    // Create a new grid with the known dimensions
+    grid_t* grid = NULL;
+    if (withMemory) {
+        grid = grid_newWithMemory(nrows, ncols);
+    } else {
+        grid = grid_new(nrows, ncols);
+    }
+
+    if (grid == NULL) {
+        fclose(fp);
+        return NULL;
+    }
+
+    // Fill the grid with map data
+    int row = 0;
+    while (fgets(line, sizeof(line), fp) != NULL && row < nrows) {
+        // Remove newline character
+        size_t len = strlen(line);
+        if (len > 0 && line[len-1] == '\n') {
+            line[len-1] = '\0';
+            len--;
         }
 
         // Copy line to grid
@@ -316,24 +350,15 @@ bool grid_load(grid_t* grid, FILE* fp)
         }
 
         // If line is shorter than grid width, fill with spaces
-        for (int col = len; col < grid->ncols; col++) {
+        for (int col = len; col < ncols; col++) {
             grid->cells[row][col] = GRID_EMPTY_SPOT;
         }
 
         row++;
     }
 
-    // If we didn't read enough rows
-    if (row < grid->nrows) {
-        // Fill remaining rows with spaces
-        for (int r = row; r < grid->nrows; r++) {
-            for (int c = 0; c < grid->ncols; c++) {
-                grid->cells[r][c] = GRID_EMPTY_SPOT;
-            }
-        }
-    }
-
-    return true;
+    fclose(fp);
+    return grid;
 }
 
 /**************** grid_get() ****************/
@@ -522,7 +547,7 @@ char* grid_buildDisplayString(game_t* gameState)
     gold_t** goldPiles = gameState->goldPiles;
     int numPiles = gameState->numPiles;
     for (int i = 0; i < numPiles; i++) {
-        if (goldPiles[i] != NULL) {
+        if (goldPiles[i] != NULL && goldPiles[i]->player == NULL) {
             int row = goldPiles[i]->row; 
             int col = goldPiles[i]->col;
             if (grid_get(grid, row, col) == '.') {
@@ -602,7 +627,7 @@ char* grid_buildPlayerDisplayString(game_t* gameState, player_t* player)
     gold_t** goldPiles = gameState->goldPiles;
     int numPiles = gameState->numPiles;
     for (int i = 0; i < numPiles; i++) {
-        if (goldPiles[i] != NULL) {
+        if (goldPiles[i] != NULL && goldPiles[i]->player == NULL) {
             int row = goldPiles[i]->row; 
             int col = goldPiles[i]->col;
             if (grid_isPointVisible(playerGrid, row, col) && grid_get(playerGrid, row, col) == '.') {

@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include "../game/game.h"
 
 /**************** Global constants ****************/
 extern const char GRID_EMPTY_SPOT;     
@@ -86,12 +87,12 @@ bool grid_delete(grid_t* grid);
 * Load grid data from a file
 * 
 * Caller provides:
-*   Valid pointer to an initialized grid
 *   Valid file pointer to a grid file
+*   Valid boolean of whether want the grid to have memory feature or not
 * We return:
-*   true if successful, false otherwise
+*   A grid_t struct if successful, or NULL otherwise
 */
-bool grid_load(grid_t* grid, FILE* fp);
+grid_t* grid_loadFromFile(const char* filename, bool withMemory);
 
 /*
 * Get the character at a specific grid position
@@ -260,7 +261,6 @@ void grid_calculateVisibility(grid_t* grid, point_t* pos);
  */
 bool grid_isVisible(grid_t* grid, point_t* from, point_t* to);
 
-/**************** grid_isPointVisible ****************/
 /* Check if a specific point is currently visible.
  *
  * Caller provides:
@@ -269,10 +269,50 @@ bool grid_isVisible(grid_t* grid, point_t* from, point_t* to);
  *   true if the point is currently visible, false otherwise
  */
 bool grid_isPointVisible(grid_t* grid, int row, int col);
+
+/* Convert the grid with visibility information to a string
+ *
+ * Caller provides:
+ *   Pointer to a grid structure and pointer to a point struct that represents the player's position
+ * We return:
+ *   Pointer to a newly allocated string showing visible areas, or NULL on error
+ * Notes:
+ *   Returns a string with the current visible grid plus remembered areas (where spot with golds will simply be treated as normal room spot)
+ *   Caller must free the returned string when done
+ */
 char* grid_visibilityToString(grid_t* grid, point_t* pos);
+
+/* Update the grid's memory based on currently visible cells
+ *
+ * Caller provides:
+ *   Pointer to a grid structure
+ * We do:
+ *   Update the memory to remember all currently visible cells
+ */
 void grid_updateMemory(grid_t* grid);
 
+/* Build a string representation of the game state for display
+ *
+ * Caller provides:
+ *   Pointer to a game state structure
+ * We return:
+ *   Pointer to a newly allocated string showing the game state, or NULL on error
+ * Notes:
+ *   Includes all players and uncollected gold on the grid (to check if a gold is collected, we check if the gold's player_t struct is NULL)
+ *   Caller must free the returned string when done
+ */
 char* grid_buildDisplayString(game_t* gameState);
+
+/* Build a string representation of what a specific player can see
+ *
+ * Caller provides:
+ *   Pointer to a game state structure and pointer to a player
+ * We return:
+ *   Pointer to a newly allocated string showing what the player can see, or NULL on error
+ * Notes:
+ *   Shows only what is visible to that player plus remembered areas
+ *   Caller must free the returned string when done
+ */
 char* grid_buildPlayerDisplayString(game_t* gameState, player_t* player);
 
 
