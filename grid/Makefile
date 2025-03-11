@@ -5,7 +5,7 @@
 CC = gcc
 CFLAGS = -Wall -pedantic -std=c11 -ggdb
 OBJS = grid.o testing.o
-LIBS = -lm
+LIBS = -lm ../game/game.a
 
 .PHONY: all clean
 
