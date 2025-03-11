@@ -37,15 +37,16 @@ typedef struct game
     player_t **players;     // list of players
     spectator_t *spectator; // the single spectator
     int playersSeen;        // total number of players seen (i.e., both joined and left)
-    gold_t *gold;
+    gold_t** goldPiles;
+    int numGoldPiles;
 } game_t;
 
-typedef struct gold
-{
-    int *piles;
-    int numPiles; // num of piles
-    int total; // total gold
-} gold_t;
+typedef struct gold {
+    int row;
+    int col;
+    int amount;
+    player_t* collector; // or 'collectedBy'
+}
 
 // global variables
 const int maxPlayers = 4;
@@ -446,10 +447,9 @@ static void updatePlayerDisplay(game_t *game, player_t *player)
         return;
     }
 
-    grid_t *grid = game->grid;
-    memory_t *visibility = visibility_new(grid);              // create memory_t struct for player visibility, used in calculate step
+    grid_t* playerGrid = player->grid; // get player grid
     point_t *playerPos = point_new(player->row, player->col); // create point_t struct for player position, used in calculate step
-    visibility_calculate(visibility, grid, playerPos);
+    grid_calculateVisibility(playerGrid, playerPos); // calculate player grid visibility
 
     // char* display = player_createDisplayString(player, grid, game->gold);
     // NOTE: BELOW IS SUBJECT TO CHANGE DEPENDING ON MARTIN'S IMPLEMENTATION — LIKELY WILL NEED TO CHANGE/TWEAK
@@ -585,6 +585,108 @@ static bool isGameOver(game_t* game)
     }
 
     return false;
+}
+
+void movePlayer(game_t* game, player_t* player, int newRow, int newCol)
+{
+    if (game == NULL || player == NULL)
+    {
+        fprintf(stderr, "Error moving player: game or player is NULL\n");
+        return;
+    }
+
+    grid_t* grid = game->grid;
+
+    // check if new position is valid
+    if (!(newRow >= 0 && newRow < grid->nrows && newCol >= 0 && newCol < grid->ncols))
+    {
+        fprintf(stderr, "Error moving player: new position is invalid (exceeds bounds of map)\n");
+        return;
+    }
+
+    // check if new position is a room
+    if (!grid_isRoom(grid, newRow, newCol))
+    {
+        fprintf(stderr, "Error moving player: new position is not a valid spot on the map (perhaps on a wall or in the void)\n");
+        return;
+    }
+
+    grid_t* playerGrid = player->grid;
+
+    gold_t* gold = game->gold;
+
+    player_t** players = game->players;
+    int playersSeen = game->playersSeen;
+
+    // check if new spot is occupied by another player
+    player_t* occupyingPlayer = NULL;
+    for (int i = 0; i < playersSeen; i++) {
+        occupyingPlayer = players[i];
+        if (occupyingPlayer->row == newRow && occupyingPlayer->col == newCol) {
+            break; // leaves loop if player is found at position
+        }
+
+        occupyingPlayer = NULL; // else set to NULL and continue
+    }
+
+    if (occupyingPlayer != NULL) {
+        // swap positions with occupying player
+        grid_t* occupyingPlayerGrid = occupyingPlayer->grid;
+        int tempRow = player->row;
+        int tempCol = player->col;
+
+        occupyingPlayer->row = tempRow;
+        occupyingPlayer->col = tempCol;
+
+        player->row = newRow;
+        player->col = newCol;
+
+        // do i also need to update the grid characters here? (i.e., set player's old position to '.' and new position to player letter)
+        // update grid characters  
+        // grid_set(grid, tempRow, tempCol, '.');
+        // grid_set(grid, newRow, newCol, player->letter);
+
+        // update grid visibility for both players (p sure this is done in updatePlayerDisplay so remove in a sec)
+        // grid_calculateVisibility(playerGrid, player->row, player->col);
+        // grid_calculateVisibility(occupyingPlayerGrid, occupyingPlayer->row, occupyingPlayer->col);
+
+        // return true;
+    } else if (grid_isGold(grid, newRow, newCol)) {
+        // update grid characters
+        int oldRow = player->row;
+        int oldCol = player->col;
+        grid_set(grid, oldRow, oldCol, '.');
+        grid_set(playerGrid, oldRow, oldCol, '.');
+
+        player->row = newRow;
+        player->col = newCol;
+
+        gold_t* goldPile = game_getGoldAtPosition(game, newRow, newCol);
+        if (goldPile != NULL) {
+            player_addGold(player, goldPile->amount);
+            goldPile->amount = 0; // this should be part of the `game_collectGold` function in game module @ARAL
+            goldPile->collector = player; // this should be part of the `game_collectGold` function in game module @ARAL
+        }
+
+        // update grid characters
+        grid_set(grid, newRow, newCol, '.'); // player letters / stuff are added in the build display string
+        grid_set(playerGrid, newRow, newCol, '.'); // player letters / stuff are added in the build display string
+
+        // return true;
+    } else {
+        // update grid characters
+        int oldRow = player->row;
+        int oldCol = player->col;
+        grid_set(grid, oldRow, oldCol, '.');
+        grid_set(playerGrid, oldRow, oldCol, '.');
+
+        player->row = newRow;
+        player->col = newCol;
+
+        // return true;
+    }
+
+    
 }
 
 /**
