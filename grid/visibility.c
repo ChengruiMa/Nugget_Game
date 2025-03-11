@@ -13,7 +13,7 @@
 #include <string.h>
 #include <math.h>
 #include "visibility.h"
-#include "map.h"
+#include "grid.h"
 
 /**************** Global type ****************/
 typedef struct memory {

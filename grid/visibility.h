@@ -13,7 +13,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
-#include "map.h"
+#include "grid.h"
 
 /**************** Global type ****************/
 /* Memory grid structure to track what a player has seen */
