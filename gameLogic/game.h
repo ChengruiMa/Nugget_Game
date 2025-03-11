@@ -8,6 +8,8 @@
 /* Opaque game state type */
 typedef struct game game_t;
 
+typedef struct gold gold_t;
+
 /* Initialize a new game state from a map file.
    Returns a pointer to the game state, or NULL on error. */
 game_t* game_new(const char* map_file);
