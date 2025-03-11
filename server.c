@@ -389,7 +389,7 @@ void handleQuit(game_t *game, addr_t from)
     }
     else
     {
-        player->left = true; // set player left to true (THIS SHOULD EXIST IN PLAYER STRUCT @NEAL (either 'left', 'isActive', 'active', or something of the nature))
+        player->leftGame = true;
         // don't remove from game state since we'll want to keep player in game state for game over operations (i.e., leaderboard, final score, etc.)
         message_send(from, "QUIT Thanks for playing!"); // send quit msg as defined in REQUIREMENTS spec
     }
@@ -793,8 +793,8 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
             int rows = game->grid->rows;
             int cols = game->grid->cols;
 
-            // BELOW CREATES PLAYER LETTER (UNCOMMENT IF PLAYER NEW DOESN'T HANDLE THIS, BUT INSTEAD TAKES ONE AS ARGUMENT @NEAL)
-            // char playerLetter = 'A' + game->playersSeen; // get player letter based on number of players seen (alphabet is contiguous with ASCII character set, so we can do this)
+            // BELOW CREATES PLAYER LETTER
+            char playerLetter = 'A' + game->playersSeen; // get player letter based on number of players seen (alphabet is contiguous with ASCII character set, so we can do this)
 
             // make player name
             char realName[maxRealNameLength];
@@ -806,7 +806,7 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
             // int y = start->y;
 
             // create new player
-            player_t *newPlayer = player_new(realName, from, game->grid); // didn't see playerLetter being created in the spec's pseudocode?
+            player_t *newPlayer = player_new(realName, playerLetter, from, game->grid); // didn't see playerLetter being created in the spec's pseudocode?
 
             if (newPlayer == NULL)
             {
