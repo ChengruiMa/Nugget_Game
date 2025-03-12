@@ -376,16 +376,17 @@ void handleQuit(game_t *game, addr_t from)
         return;
     }
 
-    // get player from address (THIS SHOULD GO IN THE GAMESTATE MODULE @ARAL)
-    player_t *player = NULL;
-    for (int i = 0; i < game->playersSeen; i++)
-    {
-        player_t *player = game->players[i];
-        if (message_eqAddr(player->address, from))
-        {
-            break; // here you would return the player (AS A METHOD IN GAMESTATE MDOULE @ARAL)
-        }
-    }
+    // get player from address
+    player_t* player = game_getPlayerFromAddress(game, from);
+    // player_t *player = NULL;
+    // for (int i = 0; i < game->playersSeen; i++)
+    // {
+    //     player_t *player = game->players[i];
+    //     if (message_eqAddr(player->address, from))
+    //     {
+    //         break; // here you would return the player (AS A METHOD IN GAMESTATE MDOULE @ARAL)
+    //     }
+    // }
 
     // handle spectator quit
     if (player == NULL)
