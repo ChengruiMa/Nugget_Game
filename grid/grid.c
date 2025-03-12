@@ -589,6 +589,19 @@ static bool hasLineOfSight(grid_t* grid, int x0, int y0, int x1, int y1)
         return true;
     }
 
+    // passage line of sight
+    if (grid_isPassage(grid, y0, x0) && grid_isPassage(grid, y1, x1)) {
+        // Check if they are directly adjacent (horizontally or vertically)
+        if ((abs(x0 - x1) == 1 && abs(y0 - y1) == 0) ||
+            (abs(x0 - x1) == 0 && abs(y0 - y1) == 1)) {
+            return true;
+        }
+        // If not adjacent but both in passages, block visibility
+        if (!(x0 == x1 && y0 == y1)) {
+            return false;
+        }
+    }
+
     double dx = x1 - x0;
     double dy = y1 - y0;
     double steps = fmax(fabs(dx), fabs(dy));

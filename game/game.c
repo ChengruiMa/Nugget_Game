@@ -11,6 +11,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <arpa/inet.h>  // For inet_ntoa()
+#include <netinet/in.h> // For sockaddr_in
+
 #include "game.h"
 #include "../grid/grid.h"
 #include "../spectator/spectator.h"
@@ -158,28 +161,19 @@ static void calculateGoldDistribution(game_t* game)
     }
 
     int total = GoldTotal;
-    int remaining = game->numPiles;
+    int numPiles = game->numPiles;
 
-    // For each pile (except the last), assign a random portion of the remaining gold
-    for (int i = 0; i < game->numPiles - 1; i++) {
-        // The last pile will get all remaining gold
-        if (remaining == 1) {
-            game->goldPiles[i]->amount = total;
-            break;
-        }
-
-        // Assign a random amount of gold, but have at least 1 gold per pile
-        int max = total - remaining + 1; 
-        int amount = 1 + (rand() % max);
-        
-        game->goldPiles[i]->amount = amount;
-        total -= amount;
-        remaining--;
+    // initially ensure every pile has *at least* one piece of gold — to prevent empty piles in extreme edge cases
+    for (int i = 0; i < numPiles; i++) {
+        game->goldPiles[i]->amount = 1;
     }
+    total -= numPiles; // remove the gauranteed 1 nugget/pile gold from the total
 
-    // The last pile gets any remaining gold
-    if (remaining > 0) {
-        game->goldPiles[game->numPiles - 1]->amount = total;
+    // randomly distribute remaining gold across all piles
+    while (total > 0) {
+        int idx = rand() % numPiles;
+        game->goldPiles[idx]->amount++;
+        total--;
     }
 }
 
@@ -238,15 +232,15 @@ bool game_addPlayer(game_t* game, player_t* newPlayer)
     // }
 
     // Find a random empty spot for the player
-    point_t* spot = grid_findEmptyRoomSpot(game->grid);
-    if (spot == NULL) {
-        player_delete(newPlayer);
-        return false;
-    }
+    // point_t* spot = grid_findEmptyRoomSpot(game->grid);
+    // if (spot == NULL) {
+    //     player_delete(newPlayer);
+    //     return false;
+    // }
 
     // Set the player's position
-    player_move(newPlayer, point_getRow(spot), point_getCol(spot));
-    point_delete(spot);
+    // player_move(newPlayer, point_getRow(spot), point_getCol(spot));
+    // point_delete(spot);
 
     game->players[game->playersSeen] = newPlayer;
     game->playersSeen++;
@@ -330,12 +324,13 @@ int game_collectGold(game_t* game, player_t* player)
     for (int i = 0; i < game->numPiles; i++) {
         gold_t* pile = game->goldPiles[i];
         
+        fprintf(stderr, "PILE NUM %d WITH %d GOLD NUGGETS\n", i, pile->amount);
         // If the pile has gold and the player is on it
         if (pile != NULL && pile->player == NULL && pile->amount > 0 && 
             pile->row == player_row && pile->col == player_col) {
 
             int goldCollected = pile->amount;
-            
+            fprintf(stderr, "PLAYER IS ON GOLD PILE AND COLLECTED %d GOLD. ROW %d COL %d\n", goldCollected, pile->row, pile->col);
             // Add gold to player's purse
             player_addGold(player, goldCollected);
             
@@ -414,9 +409,13 @@ player_t* game_getPlayerFromAddress(game_t* game, const addr_t address)
     }
 
     // Search for the player with the given address
+    fprintf(stderr, "HELLO players seen: %d\n", game->playersSeen);
     for (int i = 0; i < game->playersSeen; i++)
     {
         player_t *player = game->players[i];
+        fprintf(stderr, "HELLO HERE\n");
+        fprintf(stderr, "PLAYER IS: %s\n", player_getRealName(player));
+        fprintf(stderr, "Player address: %s\n", inet_ntoa(player_getAddress(player).sin_addr));
         if (message_eqAddr(player->address, address))
         {
             return player;
@@ -462,11 +461,7 @@ char* game_buildDisplayString(game_t* game)
     }
     
     grid_t* grid = game_getGrid(game);
-    if (grid == NULL) {
-        return NULL;
-    }
-
-    if (grid->initialized) {
+    if (grid == NULL || !grid->initialized) {
         return NULL;
     }
     

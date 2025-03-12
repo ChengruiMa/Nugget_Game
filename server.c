@@ -668,7 +668,7 @@ void movePlayer(game_t* game, player_t* player, int newRow, int newCol)
     }
 
     // check if new position is a room
-    if (!grid_isRoom(grid, newRow, newCol))
+    if (!grid_isRoom(grid, newRow, newCol) && !grid_isPassage(grid, newRow, newCol))
     {
         fprintf(stderr, "Error moving player: new position is not a valid spot on the map (perhaps on a wall or in the void)\n");
         return;
@@ -744,9 +744,12 @@ void movePlayer(game_t* game, player_t* player, int newRow, int newCol)
         // update grid characters
         int oldRow = player->row;
         int oldCol = player->col;
-        grid_set(grid, oldRow, oldCol, '.');
-        grid_set(playerGrid, oldRow, oldCol, '.');
 
+        if (!grid_isPassage(grid, newRow, newCol)) {
+            grid_set(grid, oldRow, oldCol, '.');
+            grid_set(playerGrid, oldRow, oldCol, '.');
+        }
+        
         player->row = newRow;
         player->col = newCol;
 
