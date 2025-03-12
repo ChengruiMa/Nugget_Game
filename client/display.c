@@ -9,7 +9,7 @@
 #include <stdarg.h>
 #include <ncurses.h>
 #include "../support/log.h"
-#include "../common/grid.h"
+#include "../grid/grid.h"
 #include "display.h"
 
 //const
@@ -36,8 +36,8 @@ bool display_initialize(client_t* client)
         return false;
     }
     
-    int rows = grid_get_rows(client->grid); //create game window
-    int cols = grid_get_cols(client->grid);
+    int rows = grid_getRows(client->grid); //create game window
+    int cols = grid_getCols(client->grid);
     client->gameWindow = newwin(rows, cols, STATUS_HEIGHT, 0);
     
     keypad(stdscr, TRUE); //enable keypad input for function keys, arrow keys, etc.
@@ -59,8 +59,9 @@ bool display_initialize(client_t* client)
 
 /*
  * Clean up ncurses display resources
+ * @param client client state to cleanup
  */
-void display_cleanup(void)
+void display_cleanup(client_t* client)
 {
     endwin(); //end ncurses mode
 }
@@ -79,8 +80,8 @@ bool display_check_size(client_t* client)
     int rows, cols;
     getmaxyx(stdscr, rows, cols);
     
-    int requiredRows = grid_get_rows(client->grid) + STATUS_HEIGHT;
-    int requiredCols = grid_get_cols(client->grid);
+    int requiredRows = grid_getRows(client->grid) + STATUS_HEIGHT;
+    int requiredCols = grid_getCols(client->grid);
     
     if (rows < requiredRows || cols < requiredCols) {
         clear();

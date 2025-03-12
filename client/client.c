@@ -42,7 +42,9 @@ int main(int argc, char *argv[])
         return 3;
     }
     
-    log_v("Initializing network connection to %s:%s", argv[1], argv[2]); //init network
+    char log_buffer[100];
+    snprintf(log_buffer, sizeof(log_buffer), "Initializing network connection to %s:%s", argv[1], argv[2]);
+    log_v(log_buffer); //init network
     int port = message_init(stderr); //init message module
     if (port == 0) {
         log_v("Failed to initialize message module");
@@ -54,17 +56,18 @@ int main(int argc, char *argv[])
         log_v("Joining as spectator");
         send_spectate_message(game);
     } else {
-        log_v("Joining as player: %s", game->playerName);
+        snprintf(log_buffer, sizeof(log_buffer), "Joining as player: %s", game->playerName);
+        log_v(log_buffer);
         send_play_message(game);
     }
     
     log_v("Initializing display"); //init display
     
-    bool result = message_loop(game, 0, NULL, handle_message, handle_input); //main message loop
+    bool loop_result = message_loop(game, 0, NULL, handle_input, handle_message); //main message loop
     
     cleanup(); //clean up
     
-    return result ? 0 : 5; //return result, 0 if success, 5 if failure
+    return loop_result ? 0 : 5; //return result, 0 if success, 5 if failure
 }
 
 /*  
@@ -138,12 +141,14 @@ static bool handle_input(void *arg)
  */
 static bool handle_message(void *arg, const addr_t from, const char *message)
 {
+    char log_buffer[100];
+    
     if (message == NULL) {
         log_v("Received NULL message");
         return true;
     }
     
-    if (message_isAddr(game->serverAddress, message_noAddr())) { //save server address if not already saved
+    if (!message_isAddr(game->serverAddress)) { //save server address if not already saved
         game->serverAddress = from;
     }
     
@@ -160,7 +165,8 @@ static bool handle_message(void *arg, const addr_t from, const char *message)
     } else if (strncmp(message, "ERROR ", 6) == 0) {
         return handle_error_message(game, message);
     } else {
-        log_v("Unknown message type: %s", message);
+        snprintf(log_buffer, sizeof(log_buffer), "Unknown message type: %s", message);
+        log_v(log_buffer);
         return true;
     }
 }
@@ -170,7 +176,7 @@ static bool handle_message(void *arg, const addr_t from, const char *message)
  */
 static void cleanup(void)
 {
-    display_cleanup();
+    display_cleanup(game);
     client_delete(game);
     message_done();
 }

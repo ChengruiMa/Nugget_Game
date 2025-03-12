@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../support/log.h"
-#include "../common/grid.h"
+#include "../grid/grid.h"
 #include "client_state.h"
 
 /*
@@ -145,5 +145,7 @@ void client_handle_quit(client_t* client, const char* reason)
         return;
     }
     
-    log_v("Quitting: %s", reason); //log quit reason
+    char log_buffer[100];
+    snprintf(log_buffer, sizeof(log_buffer), "Quitting: %s", reason);
+    log_v(log_buffer); //log quit reason
 }

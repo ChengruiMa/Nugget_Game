@@ -24,9 +24,7 @@ void send_play_message(client_t* client)
     char message[message_MaxBytes]; //format message, "PLAY name"
     snprintf(message, sizeof(message), "PLAY %s", client->playerName);
     
-    if (!message_send(client->serverAddress, message)) { //send msg
-        log_v("Failed to send PLAY message");
-    }
+    message_send(client->serverAddress, message); //send msg
 }
 
 /*
@@ -39,9 +37,7 @@ void send_spectate_message(client_t* client)
         return;
     }
     
-    if (!message_send(client->serverAddress, "SPECTATE")) { //send spectat msg
-        log_v("Failed to send SPECTATE message");
-    }
+    message_send(client->serverAddress, "SPECTATE"); //send spectat msg
 }
 
 /*
@@ -58,9 +54,7 @@ void send_key_message(client_t* client, char key)
     char message[message_MaxBytes]; //format msg, "KEY k"
     snprintf(message, sizeof(message), "KEY %c", key);
     
-    if (!message_send(client->serverAddress, message)) { //send msg
-        log_v("Failed to send KEY message");
-    }
+    message_send(client->serverAddress, message); //send msg
 }
 
 /*
@@ -78,9 +72,13 @@ bool handle_ok_message(client_t* client, const char* message)
     char playerLetter;
     if (sscanf(message, "OK %c", &playerLetter) == 1) { //extract player letter
         client->playerLetter = playerLetter;
-        log_v("Assigned player letter – %c", playerLetter);
+        char log_buffer[100];
+        snprintf(log_buffer, sizeof(log_buffer), "Assigned player letter – %c", playerLetter);
+        log_v(log_buffer);
     } else {
-        log_v("Invalid OK message – %s", message);
+        char log_buffer[100];
+        snprintf(log_buffer, sizeof(log_buffer), "Invalid OK message – %s", message);
+        log_v(log_buffer);
     }
     
     return true;
@@ -100,7 +98,9 @@ bool handle_grid_message(client_t* client, const char* message)
     
     int nrows, ncols;
     if (sscanf(message, "GRID %d %d", &nrows, &ncols) == 2) { //extract grid dimensions
-        log_v("Grid dimensions – %d rows, %d columns", nrows, ncols);
+        char log_buffer[100];
+        snprintf(log_buffer, sizeof(log_buffer), "Grid dimensions – %d rows, %d columns", nrows, ncols);
+        log_v(log_buffer);
         
         if (!client_update_grid(client, nrows, ncols)) { //update grid
             log_v("Failed to update grid");
@@ -114,7 +114,9 @@ bool handle_grid_message(client_t* client, const char* message)
         
         display_status(client, NULL); //update status line
     } else {
-        log_v("Invalid GRID message – %s", message);
+        char log_buffer[100];
+        snprintf(log_buffer, sizeof(log_buffer), "Invalid GRID message – %s", message);
+        log_v(log_buffer);
     }
     
     return true;
@@ -144,7 +146,9 @@ bool handle_gold_message(client_t* client, const char* message)
             display_status(client, NULL);
         }
     } else {
-        log_v("Invalid GOLD message: %s", message);
+        char log_buffer[100];
+        snprintf(log_buffer, sizeof(log_buffer), "Invalid GOLD message: %s", message);
+        log_v(log_buffer);
     }
     
     return true;
@@ -190,7 +194,7 @@ bool handle_quit_message(client_t* client, const char* message)
     
     client_handle_quit(client, reason); //notify client
     
-    display_cleanup(); //clean up display
+    display_cleanup(client); //clean up display
     
     printf("%s\n", reason); //print quit message
     
@@ -216,7 +220,9 @@ bool handle_error_message(client_t* client, const char* message)
         errorMsg = "Unknown error";
     }
     
-    log_v("Server error: %s", errorMsg); //log error
+    char log_buffer[100];
+    snprintf(log_buffer, sizeof(log_buffer), "Server error: %s", errorMsg);
+    log_v(log_buffer); //log error
     
     display_status(client, errorMsg); //display error msg
     
