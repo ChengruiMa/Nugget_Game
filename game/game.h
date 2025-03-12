@@ -11,8 +11,14 @@
 #define __GAMEMODEL_H
 
 #include <stdio.h>
-#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "game.h"
 #include "grid.h"
+#include "spectator.h"
+#include "message.h"
+#include "player.h"
 
 /**************** global constants ****************/
 extern const int MaxNameLength;
@@ -76,7 +82,7 @@ void game_distributeGold(game_t* game);
 * Notes:
 *   The player is given a random valid position on the map
 */
-bool game_add_player(game_t* game, const char* player_name, const char* address);
+bool game_addPlayer(game_t* game, player_t* newPlayer);
 
 /**************** game_move_player ****************/
 /* Move a player to a new position on the map.
@@ -148,7 +154,7 @@ void game_end(game_t* game);
 *   true if the spectator was successfully added
 *   false if any error occurred
 */
-bool game_addSpectator(game_t* game, const char* from);
+bool game_addSpectator(game_t* game, addr_t from);
 
 /**************** game_get_player ****************/
 /* Get a player based on their address.
@@ -160,7 +166,7 @@ bool game_addSpectator(game_t* game, const char* from);
 *   A pointer to the player if found
 *   NULL if not found or if any error occurred
 */
-player_t* game_get_player(game_t* game, const char* address);
+player_t* game_getPlayerFromAddress(game_t* game, const addr_t address);
 
 /**************** game_getGrid ****************/
 /* Get the master grid of the game.
@@ -184,17 +190,6 @@ grid_t* game_getGrid(game_t* game);
 */
 spectator_t* game_getSpectator(game_t* game);
 
-/**************** game_getNumPlayers ****************/
-/* Get the number of players currently in the game.
-* 
-* Caller provides:
-*   A valid game pointer
-* We return:
-*   The number of players in the game
-*   -1 if game is NULL
-*/
-int game_getNumPlayers(game_t* game);
-
 /**************** game_getGoldRemaining ****************/
 /* Get the amount of gold remaining in the game.
 * 
@@ -205,16 +200,5 @@ int game_getNumPlayers(game_t* game);
 *   -1 if game is NULL
 */
 int game_getGoldRemaining(game_t* game);
-
-/**************** game_getTotalGold ****************/
-/* Get the total amount of gold in the game.
-* 
-* Caller provides:
-*   A valid game pointer
-* We return:
-*   The total amount of gold in the game
-*   -1 if game is NULL
-*/
-int game_getTotalGold(game_t* game);
 
 #endif // __GAMEMODEL_H

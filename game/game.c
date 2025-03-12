@@ -39,10 +39,11 @@ typedef struct game {
     
     int playersSeen;          // Total number of players seen (joined and left)
     int numPiles;             // Number of gold piles
+    int goldRemaining;        // Total gold remaining on the grid
 } game_t;
 
 /**************** function declarations ****************/
-static void calculate_gold_distribution(game_t* game);
+static void calculateGoldDistribution(game_t* game);
 
 /**************** game_new ****************/
 game_t* game_new(const char* filename) 
@@ -163,8 +164,8 @@ void game_delete(game_t* game)
     free(game);
 }
 
-/**************** calculate_gold_distribution ****************/
-static void calculate_gold_distribution(game_t* game) 
+/**************** calculateGoldDistribution ****************/
+static void calculateGoldDistribution(game_t* game) 
 {
     if (game == NULL || game->numPiles <= 0) {
         return;
@@ -205,7 +206,7 @@ void game_distributeGold(game_t* game)
     }
 
     // Calculate gold amounts for each pile
-    calculate_gold_distribution(game);
+    calculateGoldDistribution(game);
 
     // Place each gold pile at a random empty room spot
     for (int i = 0; i < game->numPiles; i++) {
@@ -230,9 +231,9 @@ void game_distributeGold(game_t* game)
 }
 
 /**************** game_add_player ****************/
-bool game_add_player(game_t* game, const char* player_name, const char* address) 
+bool game_addPlayer(game_t* game, player_t* newPlayer) 
 {
-    if (game == NULL || player_name == NULL || address == NULL) {
+    if (game == NULL || newPlayer == NULL) {
         return false;
     }
 
@@ -241,14 +242,14 @@ bool game_add_player(game_t* game, const char* player_name, const char* address)
         return false;
     }
 
-    // Assign a letter to the player (A-Z based on number of players seen)
-    char letter = 'A' + game->playersSeen;
+    // // Assign a letter to the player (A-Z based on number of players seen)
+    // char letter = 'A' + game->playersSeen;
 
-    // Create a new player
-    player_t* newPlayer = player_new(player_name, letter, address, game->grid);
-    if (newPlayer == NULL) {
-        return false;
-    }
+    // // Create a new player
+    // player_t* newPlayer = player_new(player_name, letter, address, game->grid);
+    // if (newPlayer == NULL) {
+    //     return false;
+    // }
 
     // Find a random empty spot for the player
     point_t* spot = grid_findEmptyRoomSpot(game->grid);
@@ -261,8 +262,8 @@ bool game_add_player(game_t* game, const char* player_name, const char* address)
     player_move(newPlayer, point_getRow(spot), point_getCol(spot));
     point_delete(spot);
 
+    game->players[game->playersSeen] = newPlayer;
     game->playersSeen++;
-    game->players[game->numPlayers++] = newPlayer;
 
     return true;
 }
@@ -282,7 +283,7 @@ bool game_move_player(game_t* game, player_t* player, int new_row, int new_col)
 
     // Check if the new position is a valid spot to move to (room or passage)
     char cell = grid_get(game->grid, new_row, new_col);
-    if (!grid_isRoom(grid, new_row, new_col) && !grid_isPassage(grid, new_row, new_col))
+    if (!grid_isRoom(grid, new_row, new_col) && !grid_isPassage(grid, new_row, new_col)) {
         return false;
     }
 
@@ -349,7 +350,6 @@ void collect_gold(game_t* game, player_t* player)
             player_addGold(player, pile->amount);
             
             // Update game state
-            game->goldRemaining -= pile->amount;
             pile->amount = 0;
             pile->player = player;
             
@@ -394,7 +394,7 @@ void game_end(game_t* game)
 }
 
 /**************** game_addSpectator ****************/
-bool game_addSpectator(game_t* game, const char* from) 
+bool game_addSpectator(game_t* game, addr_t from) 
 {
     if (game == NULL || from == NULL) {
         return false;
@@ -412,17 +412,19 @@ bool game_addSpectator(game_t* game, const char* from)
     return (game->spectator != NULL);
 }
 
-/**************** game_get_player ****************/
-player_t* game_get_player(game_t* game, const char* address) 
+/**************** game_getPlayerFromAddress ****************/
+player_t* game_getPlayerFromAddress(game_t* game, const addr_t address) 
 {
     if (game == NULL || address == NULL) {
         return NULL;
     }
 
     // Search for the player with the given address
-    for (int i = 0; i < game->numPlayers; i++) {
-        player_t* player = game->players[i];
-        if (player != NULL && strcmp(player_getAddress(player), address) == 0) {
+    for (int i = 0; i < game->playersSeen; i++)
+    {
+        player_t *player = game->players[i];
+        if (message_eqAddr(player->address, address))
+        {
             return player;
         }
     }
@@ -448,15 +450,6 @@ spectator_t* game_getSpectator(game_t* game)
     return game->spectator;
 }
 
-/**************** game_getNumPlayers ****************/
-int game_getNumPlayers(game_t* game) 
-{
-    if (game == NULL) {
-        return -1;
-    }
-    return game->numPlayers;
-}
-
 /**************** game_getGoldRemaining ****************/
 int game_getGoldRemaining(game_t* game) 
 {
@@ -464,13 +457,4 @@ int game_getGoldRemaining(game_t* game)
         return -1;
     }
     return game->goldRemaining;
-}
-
-/**************** game_getTotalGold ****************/
-int game_getTotalGold(game_t* game) 
-{
-    if (game == NULL) {
-        return -1;
-    }
-    return GoldTotal;
 }

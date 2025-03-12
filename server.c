@@ -11,6 +11,17 @@
 #include <string.h>
 
 #include "message.h"
+#include "player.h"
+#include "spectator.h"
+#include "game.h"
+#include "grid.h"
+
+/**************** constants ****************/
+const int MaxNameLength = 50;
+const int GoldTotal = 250;
+const int MaxPlayers = 26;
+const int GoldMinNumPiles = 10;
+const int GoldMaxNumPiles = 30;
 
 // function prototypes
 static int parseArgs(int argc, char *argv[], int *storedSeed, char *map);
@@ -30,28 +41,28 @@ static void handleGameOver(game_t *game);
 static void handleMalformedMessage(addr_t from, char *message, char *originalMessage);
 static void sendOK(player_t *player);
 
-// structs
-typedef struct game
-{
-    grid_t *grid;           // master grid
-    player_t **players;     // list of players
-    spectator_t *spectator; // the single spectator
-    int playersSeen;        // total number of players seen (i.e., both joined and left)
-    gold_t** goldPiles;
-    int numGoldPiles;
-} game_t;
+// // structs
+// typedef struct game
+// {
+//     grid_t *grid;           // master grid
+//     player_t **players;     // list of players
+//     spectator_t *spectator; // the single spectator
+//     int playersSeen;        // total number of players seen (i.e., both joined and left)
+//     gold_t** goldPiles;
+//     int numGoldPiles;
+// } game_t;
 
-typedef struct gold {
-    int row;
-    int col;
-    int amount;
-    player_t* collector; // or 'collectedBy'
-}
+// typedef struct gold {
+//     int row;
+//     int col;
+//     int amount;
+//     player_t* collector; // or 'collectedBy'
+// }
 
 // global variables
-const int maxPlayers = 4;
-const int maxSpectators = 1;
-const int maxRealNameLength = 20;
+// const int maxPlayers = 4;
+// const int maxSpectators = 1;
+// const int MaxNameLength = 20;
 
 /**
  * Parses command line arguments
@@ -174,7 +185,7 @@ static void handleGameOver(game_t *game)
     qsort(players, playersSeen, sizeof(player_t*), comparePlayers); // need to define comparePlayers function
 
     // create leaderboard end game message
-    char* leaderboard = malloc(((playersSeen + 1) * (sizeof(char)*maxRealNameLength)) + 50); // should be enough for message (add 1 to players seen to account for spectator)
+    char* leaderboard = malloc(((playersSeen + 1) * (sizeof(char)*MaxNameLength)) + 50); // should be enough for message (add 1 to players seen to account for spectator)
     if (leaderboard == NULL)
     {
         fprintf(stderr, "Error creating leaderboard message\n");
@@ -185,7 +196,7 @@ static void handleGameOver(game_t *game)
     for (int i = 0; i < playersSeen; i++)
     {
         player_t* player = players[i];
-        char* playerScore = malloc(sizeof(char) * maxRealNameLength + 10); // should be enough for message
+        char* playerScore = malloc(sizeof(char) * MaxNameLength + 10); // should be enough for message
         if (playerScore == NULL)
         {
             fprintf(stderr, "Error creating player score message\n");
@@ -321,15 +332,13 @@ handleNewSpectator(game_t* game, addr_t from)
         fprintf(stderr, "Invalid game state passed to handleNewSpectator\n");
         return;
     }
-    // add to game state (THE BELOW SHOULD BE A FUNCTION IN THE GAMESTATE MODULE @ARAL — as in, game_addSpectator(game, from) or something of the nature)
-    if (game->spectator != NULL) {
-        message_send(game->spectator->address, "You have been replaced by a new spectator.");
-        spectator_delete(game->spectator); // should free spectator memory (THIS SHOULD BE A FUNCTION IN SPECTATOR MODULE THAT SHOULD EXIST @NEAL — must also create the spectator module @NEAL)
-    }
 
-    spectator_t* spectator = spectator_new(from); // create new spectator (SHOULD BE A FUNCTION IN SPECTATOR MODULE THAT SHOULD EXIST @NEAL)
-    game->spectator = spectator; // set spectator in game state
-    // DONE WITH ADD TO GAME STATE LOGIC — ABOVE (after game null check) SHOULD BE HANDLED IN GAME STATE MODULE @ARAL
+    // add to game state 
+    if (!game_addSpectator(game, from)) {
+        fprintf(stderr, "Error adding spectator to game state\n");
+        // maybe send error message to spectator's client?
+        return;
+    }
 
     // send initial grid message to spectator
     int nrows = game->grid->nrows;
@@ -711,15 +720,7 @@ static void handleKeyPress(game_t *game, const addr_t from, char key)
     }
 
     // get player from address (THIS SHOULD GO IN THE GAMESTATE MODULE @ARAL)
-    player_t *player = NULL;
-    for (int i = 0; i < game->playersSeen; i++)
-    {
-        player_t *player = game->players[i];
-        if (message_eqAddr(player->address, from))
-        {
-            break; // here you would return the player (AS A METHOD IN GAMESTATE MDOULE @ARAL)
-        }
-    }
+    player_t* player = game_getPlayerFromAddress(game, from);
 
     if (player == NULL)
     {
@@ -899,13 +900,20 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
             char playerLetter = 'A' + game->playersSeen; // get player letter based on number of players seen (alphabet is contiguous with ASCII character set, so we can do this)
 
             // make player name
-            char realName[maxRealNameLength];
+            char realName[MaxNameLength];
             strcpy(realName, parsed[1]); // copy player name from parsed message
 
             // generate random starting position for player (handled by player_new according to IMPLEMENTATION SPEC, so commented out for now)
             // point_t* start = grid_findEmptySpot(game->grid); // find empty spot on grid for player to start
             // int x = start->x;
             // int y = start->y;
+
+            if (game->playersSeen >= MaxPlayers)
+            {
+                // send error message to client
+                handleMalformedMessage(from, "Message Error: Maximum number of players reached", message);
+                return false; // not fatal, continue message loop
+            }
 
             // create new player
             player_t *newPlayer = player_new(realName, playerLetter, from, game->grid); // didn't see playerLetter being created in the spec's pseudocode?
@@ -923,6 +931,7 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
                 // add player to game state (THIS SHOULD BE A FUNCTION IN THE GAMESTATE MODULE @ARAL)
                 // game->players[game->playersSeen] = newPlayer;
                 // game->playersSeen++;
+
 
                 // immediately send new client the size of the grid in the format "GRID rows cols"
                 char *gridMessage = malloc(sizeof("GRID ") + sizeof(rows) + sizeof(cols) + 2); // +1 for null terminator, +1 for space
