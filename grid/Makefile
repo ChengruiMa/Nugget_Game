@@ -3,18 +3,27 @@
 
 CC = gcc
 CFLAGS = -Wall -pedantic -std=c11 -ggdb
-OBJS = grid.o testing.o
+OBJS = grid.o
+TOBJS = testing.o
 LIBS = -lm
 
 .PHONY: all clean
 
-all: testing
+all: grid.a
 
-testing: $(OBJS)
-	$(CC) $(CFLAGS) -o testing $(OBJS) $(LIBS)
+
+
+# grid: $(OBJS)
+# 	$(CC) $(CFLAGS) -o grid $(OBJS) $(LIBS)
+
+grid.a: $(OBJS)
+	ar cr grid.a $(OBJS)
 
 grid.o: grid.c grid.h 
 	$(CC) $(CFLAGS) -c grid.c
+
+testing: $(OBJS) $(TOBJS)
+	$(CC) $(CFLAGS) -o testing $(OBJS) $(TOBJS) $(LIBS)
 
 testing.o: testing.c grid.h
 	$(CC) $(CFLAGS) -c testing.c

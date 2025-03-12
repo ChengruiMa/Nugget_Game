@@ -13,6 +13,7 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
+
 #include "grid.h"
 
 const char GRID_EMPTY_SPOT = ' ';
