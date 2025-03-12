@@ -46,7 +46,7 @@ grid_t* grid_new(int nrows, int ncols);
 grid_t* grid_newWithMemory(int nrows, int ncols);
 grid_t* grid_createPlayerGrid(grid_t* grid);
 bool grid_delete(grid_t* grid);
-grid_t* grid_loadFromFile(const char* filename, bool withMemory);
+grid_t* grid_load(FILE* map);
 char grid_get(grid_t* grid, int row, int col);
 bool grid_set(grid_t* grid, int row, int col, char ch);
 bool grid_isRoom(grid_t* grid, int row, int col);
@@ -286,15 +286,9 @@ bool grid_delete(grid_t* grid)
 }
 
 /**************** grid_load() ****************/
-grid_t* grid_loadFromFile(const char* filename, bool withMemory)
+grid_t* grid_load(FILE* map)
 {
-    if (filename == NULL) {
-        return NULL;
-    }
-
-    // Open the file
-    FILE* fp = fopen(filename, "r");
-    if (fp == NULL) {
+    if (map == NULL) {
         return NULL;
     }
 
@@ -303,7 +297,7 @@ grid_t* grid_loadFromFile(const char* filename, bool withMemory)
     int ncols = 0;
     char line[1024]; // Assuming no line is extremely long (i.e. longer than 1024 characters)
 
-    while (fgets(line, sizeof(line), fp) != NULL) {
+    while (fgets(line, sizeof(line), map) != NULL) {
         size_t len = strlen(line);
         if (len > 0 && line[len-1] == '\n') {
             line[len-1] = '\0';
@@ -319,24 +313,24 @@ grid_t* grid_loadFromFile(const char* filename, bool withMemory)
     }
 
     // Reset file position to the beginning
-    rewind(fp);
+    rewind(map);
 
     // Create a new grid with the known dimensions
     grid_t* grid = NULL;
-    if (withMemory) {
-        grid = grid_newWithMemory(nrows, ncols);
-    } else {
-        grid = grid_new(nrows, ncols);
-    }
-
+    // if (withMemory) {
+    //     grid = grid_newWithMemory(nrows, ncols);
+    // } else {
+    //     grid = grid_new(nrows, ncols);
+    // }
+    grid = grid_new(nrows, ncols);
     if (grid == NULL) {
-        fclose(fp);
+        fprintf(stderr, "Error: Something went wrong while creating grid\n");
         return NULL;
     }
 
     // Fill the grid with map data
     int row = 0;
-    while (fgets(line, sizeof(line), fp) != NULL && row < nrows) {
+    while (fgets(line, sizeof(line), map) != NULL && row < nrows) {
         // Remove newline character
         size_t len = strlen(line);
         if (len > 0 && line[len-1] == '\n') {
@@ -357,7 +351,6 @@ grid_t* grid_loadFromFile(const char* filename, bool withMemory)
         row++;
     }
 
-    fclose(fp);
     return grid;
 }
 

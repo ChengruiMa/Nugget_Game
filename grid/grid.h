@@ -92,7 +92,7 @@ bool grid_delete(grid_t* grid);
 * We return:
 *   A grid_t struct if successful, or NULL otherwise
 */
-grid_t* grid_loadFromFile(const char* filename, bool withMemory);
+grid_t* grid_load(FILE* map);
 
 /*
 * Get the character at a specific grid position
