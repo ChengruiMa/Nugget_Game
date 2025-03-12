@@ -2,7 +2,7 @@
 
 # Compiler and flags
 CC      = gcc
-CFLAGS  = -Wall -Wextra -Werror -g
+CFLAGS  = -Wall -pedantic -std=c11 -ggdb
 LDFLAGS = -lncurses
 
 # Include paths – adjust if your directory structure differs
