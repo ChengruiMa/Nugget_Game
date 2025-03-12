@@ -56,7 +56,7 @@ client_t* client_new(const char* hostname, int port, const char* playerName)
     client->playerLetter = '\0'; //initialize other fields
     client->purse = 0;
     client->remainingGold = 0;
-    client->serverAddress = message_noAddr();
+    client->serverAddress = message_noAddr(); // wtf @neal
     client->grid = NULL;
     client->gameWindow = NULL;
     client->lastGoldCollected = 0;
