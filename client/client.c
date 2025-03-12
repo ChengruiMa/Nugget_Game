@@ -45,7 +45,8 @@ int main(int argc, char *argv[])
     char log_buffer[100];
     snprintf(log_buffer, sizeof(log_buffer), "Initializing network connection to %s:%s", argv[1], argv[2]);
     log_v(log_buffer); //init network
-    int port = message_init(stderr); //init message module
+    FILE* output = fopen("client.log", "w");
+    int port = message_init(output); //init message module
     if (port == 0) {
         log_v("Failed to initialize message module");
         client_delete(game);
@@ -64,6 +65,8 @@ int main(int argc, char *argv[])
     log_v("Initializing display"); //init display
     
     bool loop_result = message_loop(game, 0, NULL, handle_input, handle_message); //main message loop
+
+    fclose(output);
     
     cleanup(); //clean up
     
@@ -104,7 +107,7 @@ static bool handle_input(void *arg)
     
     if (key == EOF) { //check for EOF
         send_key_message(game, 'Q');
-        return false;
+        return true;
     }
     
     if (game->isSpectator) { //check if spectator
@@ -124,12 +127,14 @@ static bool handle_input(void *arg)
             key == 'b' || key == 'B' ||
             key == 'n' || key == 'N') {
             send_key_message(game, key);
-        } else {
-            display_status(game, "Unknown keystroke");
-        }
+        } 
+        // else {
+        //     // display_status(game, "Unknown keystroke");
+        //     // do nothing
+        // }
     }
     
-    return true;
+    return false;
 }
 
 /*
@@ -165,8 +170,8 @@ static bool handle_message(void *arg, const addr_t from, const char *message)
     } else if (strncmp(message, "ERROR ", 6) == 0) {
         return handle_error_message(game, message);
     } else {
-        snprintf(log_buffer, sizeof(log_buffer), "Unknown message type: %s", message);
-        log_v(log_buffer);
+        // snprintf(log_buffer, sizeof(log_buffer), "Unknown message type: %s", message);
+        // log_v(log_buffer);
         return false;
     }
 }
