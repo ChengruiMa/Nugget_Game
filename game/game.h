@@ -7,8 +7,8 @@
 * Mar 11, 2025
 */
 
-#ifndef __GAMEMODEL_H
-#define __GAMEMODEL_H
+#ifndef __GAME_H
+#define __GAME_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,7 +44,7 @@ typedef struct gold gold_t;
 * Notes:
 *   The caller must later call game_delete
 */
-game_t* game_new(const char* filename);
+game_t* game_new(FILE* map);
 
 /**************** game_delete ****************/
 /* Delete the game, freeing all allocated memory.
@@ -201,4 +201,4 @@ spectator_t* game_getSpectator(game_t* game);
 */
 int game_getGoldRemaining(game_t* game);
 
-#endif // __GAMEMODEL_H
+#endif // __GAME_H
