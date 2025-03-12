@@ -46,9 +46,9 @@ typedef struct game {
 static void calculateGoldDistribution(game_t* game);
 
 /**************** game_new ****************/
-game_t* game_new(const char* filename) 
+game_t* game_new(FILE* map) 
 {
-    if (map == NULL0) {
+    if (map == NULL) {
         fprintf(stderr, "Error: Invalid parameters in game_new\n");
         return NULL;
     }
@@ -61,7 +61,7 @@ game_t* game_new(const char* filename)
     }
 
     // Initialize game structure
-    game->grid = grid_loadFromFile(filename, false);
+    game->grid = grid_load(map);
     if (game->grid == NULL) {
         fprintf(stderr, "Error: Failed to load grid from file\n");
         free(game);
@@ -310,7 +310,7 @@ bool game_move_player(game_t* game, player_t* player, int new_row, int new_col)
     }
 
     // Check if the player has collected gold
-    collect_gold(game, player);
+    game_collectGold(game, player);
 
     return true;
 }
@@ -324,12 +324,12 @@ void game_update_gold(game_t* game)
 
     // Check each player for gold collection
     for (int i = 0; i < game->numPlayers; i++) {
-        collect_gold(game, game->players[i]);
+        game_collectGold(game, game->players[i]);
     }
 }
 
-/**************** collect_gold ****************/
-void collect_gold(game_t* game, player_t* player) 
+/**************** game_collectGold ****************/
+int game_collectGold(game_t* game, player_t* player) 
 {
     if (game == NULL || player == NULL) {
         return;
@@ -345,9 +345,11 @@ void collect_gold(game_t* game, player_t* player)
         // If the pile has gold and the player is on it
         if (pile != NULL && pile->player == NULL && pile->amount > 0 && 
             pile->row == player_row && pile->col == player_col) {
+
+            int goldCollected = pile->amount;
             
             // Add gold to player's purse
-            player_addGold(player, pile->amount);
+            player_addGold(player, goldCollected);
             
             // Update game state
             pile->amount = 0;
@@ -355,8 +357,12 @@ void collect_gold(game_t* game, player_t* player)
             
             // Update grid (replace gold marker with empty spot)
             grid_set(game->grid, player_row, player_col, '.');
+
+            return goldCollected; // make sure this isn't going to be zero
         }
     }
+
+    return -1;
 }
 
 /**************** game_is_over ****************/

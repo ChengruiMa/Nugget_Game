@@ -35,7 +35,7 @@ static void updateSpectatorDisplay(game_t *game, spectator_t *spectator);
 static void updatePlayerDisplay(game_t *game, player_t *player);
 static void updateSpectatorGold(game_t *game);
 static void updateAllPlayerGold(game_t *game);
-static int getRemainingGold(gold_t *gold);
+static int getRemainingGold(game_t* game);
 static bool isGameOver(game_t *game);
 static void handleGameOver(game_t *game);
 static void handleMalformedMessage(addr_t from, char *message, char *originalMessage);
@@ -460,8 +460,6 @@ static void updatePlayerDisplay(game_t *game, player_t *player)
     point_t *playerPos = point_new(player->row, player->col); // create point_t struct for player position, used in calculate step
     grid_calculateVisibility(playerGrid, playerPos); // calculate player grid visibility
 
-    // char* display = player_createDisplayString(player, grid, game->gold);
-    // NOTE: BELOW IS SUBJECT TO CHANGE DEPENDING ON MARTIN'S IMPLEMENTATION — LIKELY WILL NEED TO CHANGE/TWEAK
     char *display = grid_buildPlayerDisplayString(game, player); // build player display string (THIS SHOULD BE A FUNCTION IN THE GRID MODULE @MARTIN)
 
     char *message = malloc((sizeof(char) * strlen(display)) + 10); // +10 for "DISPLAY \n" and null terminator — should fit in message_MaxBytes according to REQUIREMENTS spec
@@ -497,7 +495,7 @@ static void updateSpectatorGold(game_t* game)
         return;
     }
 
-    int remainingGold = getRemainingGold(game->gold);
+    int remainingGold = getRemainingGold(game->goldPiles);
     // int totalGold = game->gold->total;
 
     char* message = malloc(sizeof(char) * 50); // should be enough for message
@@ -554,20 +552,21 @@ static void updateAllPlayerGold(game_t* game)
  * Helper function to get the total remaining gold in the game
  * 
  * Inputs:
- * @param gold: the gold state to get the remaining gold from
+ * @param game: the game state to get the remaining gold from
  */
-static int getRemainingGold(gold_t* gold)
+static int getRemainingGold(game_t* game)
 {
-    if (gold == NULL)
+    gold_t** piles = game->goldPiles;
+    if (game == NULL || piles == NULL)
     {
         fprintf(stderr, "Error getting remaining gold\n");
         return -1;
     }
 
     int totalRemaining = 0;
-    for (int i = 0; i < gold->numPiles; i++)
+    for (int i = 0; i < game->numPiles; i++)
     {
-        totalRemaining += gold->piles[i];
+        totalRemaining += piles->amount[i];
     }
 
     return totalRemaining;
@@ -594,6 +593,31 @@ static bool isGameOver(game_t* game)
     }
 
     return false;
+}
+
+void sendGoldMessage(game_t* game, player_t* player, int goldCollected) {
+    if (game == NULL || player == NULL) {
+        fprintf(stderr, "Error sending gold message\n");
+        return;
+    }
+
+    int currentGold = player->purse;
+    int remainingGold = getRemainingGold(game->gold);
+
+    char* message = malloc(sizeof(char) * 50); // should be enough for message
+    if (message == NULL) {
+        fprintf(stderr, "Error sending gold message\n");
+        return;
+    }
+
+    sprintf(message, "GOLD %d %d %d", goldCollected, currentGold, remainingGold); // format message as per REQUIREMENTS spec
+    message_send(player->address, message); // send gold message to player
+    free(message); // free message
+
+    // do we also need to update all player gold here? (i.e., call updateAllPlayerGold and updateSpectatorGold — or is this handled every time in the handleKeyPress function anyways?)
+    // answer: yes we do, b/c imagine a player toggled right move and the switch never leaves / doesn't unfire, then the gold message would never be sent to other clients
+    updateAllPlayerGold(game);
+    updateSpectatorGold(game);
 }
 
 void movePlayer(game_t* game, player_t* player, int newRow, int newCol)
@@ -670,18 +694,24 @@ void movePlayer(game_t* game, player_t* player, int newRow, int newCol)
         player->row = newRow;
         player->col = newCol;
 
-        gold_t* goldPile = game_getGoldAtPosition(game, newRow, newCol);
-        if (goldPile != NULL) {
-            player_addGold(player, goldPile->amount); // this should be part of the `game_collectGold` function in game module @ARAL
-            goldPile->amount = 0; // this should be part of the `game_collectGold` function in game module @ARAL
-            goldPile->collector = player; // this should be part of the `game_collectGold` function in game module @ARAL
-        }
+        int goldCollected = game_collectGold(game, player); // this should cover the below lines (that are commented out — TODO: SHOULD BE TESTED)
+        // gold_t* goldPile = game_getGoldAtPosition(game, newRow, newCol);
+        // if (goldPile != NULL) {
+
+        //     player_addGold(player, goldPile->amount); // this should be part of the `game_collectGold` function in game module @ARAL
+        //     goldPile->amount = 0; // this should be part of the `game_collectGold` function in game module @ARAL
+        //     goldPile->collector = player; // this should be part of the `game_collectGold` function in game module @ARAL
+        // }
 
         // update grid characters
         grid_set(grid, newRow, newCol, '.'); // player letters / stuff are added in the build display string
         grid_set(playerGrid, newRow, newCol, '.'); // player letters / stuff are added in the build display string
 
         // return true;
+
+        if (goldCollected != -1) {
+            sendGoldMessage(game, player, goldCollected);
+        }
     } else {
         // update grid characters
         int oldRow = player->row;
@@ -694,8 +724,6 @@ void movePlayer(game_t* game, player_t* player, int newRow, int newCol)
 
         // return true;
     }
-
-    
 }
 
 /**
@@ -745,83 +773,83 @@ static void handleKeyPress(game_t *game, const addr_t from, char key)
     case 'h':
         // move player left, if possible
         // TODO: players might want to be updated to playerList, as outline in implementation spec
-        player_move(player, game->grid, player->row - 1, player->col, game->players); // assuming row is x and col is y (TODO: THE NAMING SHOULD BE CHANGED TO X AND Y @NEAL)
+        movePlayer(game, player, player->row - 1, player->col); // assuming row is x and col is y (TODO: THE NAMING SHOULD BE CHANGED TO X AND Y @NEAL)
         break;
     case 'l':
         // move player right, if possible
-        player_move(player, game->grid, player->row + 1, player->col, game->players);
+        movePlayer(game, player, player->row + 1, player->col);
         break;
     case 'j':
         // move player up, if possible
-        player_move(player, game->grid, player->row, player->col + 1, game->players);
+        movePlayer(game, player, player->row, player->col + 1);
         break;
     case 'k':
         // move player down, if possible
-        player_move(player, game->grid, player->row, player->col - 1, game->players);
+        movePlayer(game, player, player->row, player->col - 1);
         break;
     case 'y':
         // move player up and left, if possible
-        player_move(player, game->grid, player->row - 1, player->col + 1, game->players);
+        movePlayer(game, player, player->row - 1, player->col + 1);
         break;
     case 'u':
         // move player up and right, if possible
-        player_move(player, game->grid, player->row + 1, player->col + 1, game->players);
+        movePlayer(game, player, player->row + 1, player->col + 1);
         break;
     case 'b':
         // move player down and left, if possible
-        player_move(player, game->grid, player->row - 1, player->col - 1, game->players);
+        movePlayer(game, player, player->row - 1, player->col - 1);
         break;
     case 'n':
         // move player down and right, if possible
-        player_move(player, game->grid, player->row + 1, player->col - 1, game->players);
+        movePlayer(game, player, player->row + 1, player->col - 1);
         break;
     // now the uppercase versions of above, which act as a toggle (i.e., while loop to move in that direction until player runs into wall)
     case 'H':
         while (grid_isRoom(game->grid, player->row - 1, player->col))
         { // pretty sure `grid_isRoom` is basically isEmpty (anything that isn't a wall)
-            player_move(player, game->grid, player->row - 1, player->col, game->players);
+            movePlayer(game, player, player->row - 1, player->col);
         }
         break;
     case 'L':
         while (grid_isRoom(game->grid, player->row + 1, player->col))
         {
-            player_move(player, game->grid, player->row + 1, player->col, game->players);
+            movePlayer(game, player, player->row + 1, player->col);
         }
         break;
     case 'J':
         while (grid_isRoom(game->grid, player->row, player->col + 1))
         {
-            player_move(player, game->grid, player->row, player->col + 1, game->players);
+            movePlayer(game, player, player->row, player->col + 1);
         }
         break;
     case 'K':
         while (grid_isRoom(game->grid, player->row, player->col - 1))
         {
-            player_move(player, game->grid, player->row, player->col - 1, game->players);
+            movePlayer(game, player, player->row, player->col - 1);
         }
         break;
     case 'Y':
         while (grid_isRoom(game->grid, player->row - 1, player->col + 1))
         {
-            player_move(player, game->grid, player->row - 1, player->col + 1, game->players);
+            movePlayer(game, player, player->row - 1, player->col + 1);
         }
         break;
     case 'U':
         while (grid_isRoom(game->grid, player->row + 1, player->col + 1))
         {
-            player_move(player, game->grid, player->row + 1, player->col + 1, game->players);
+            movePlayer(game, player, player->row + 1, player->col + 1);
         }
         break;
     case 'B':
         while (grid_isRoom(game->grid, player->row - 1, player->col - 1))
         {
-            player_move(player, game->grid, player->row - 1, player->col - 1, game->players);
+            movePlayer(game, player, player->row - 1, player->col - 1);
         }
         break;
     case 'N':
         while (grid_isRoom(game->grid, player->row + 1, player->col - 1))
         {
-            player_move(player, game->grid, player->row + 1, player->col - 1, game->players);
+            movePlayer(game, player, player->row + 1, player->col - 1);
         }
         break;
     case 'Q':

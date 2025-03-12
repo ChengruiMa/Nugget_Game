@@ -109,7 +109,7 @@ bool game_move_player(game_t* game, player_t* player, int new_row, int new_col);
 */
 void game_update_gold(game_t* game);
 
-/**************** collect_gold ****************/
+/**************** game_collectGold ****************/
 /* Collect gold for a specific player.
 * 
 * Caller provides:
@@ -120,7 +120,7 @@ void game_update_gold(game_t* game);
 *   Updates player's purse and the game state if gold is collected
 *   Does nothing if game or player is NULL
 */
-void collect_gold(game_t* game, player_t* player);
+void game_collectGold(game_t* game, player_t* player);
 
 /**************** game_is_over ****************/
 /* Check if the game is over (all gold collected) by checking the goldRemaining field in game.

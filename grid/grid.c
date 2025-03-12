@@ -550,7 +550,7 @@ char* grid_buildDisplayString(game_t* gameState)
     }
     
     // Add players to the temporary grid
-    for (int id = 0; id < gameState->numPlayers; id++) {
+    for (int id = 0; id < gameState->playersSeen; id++) {
         player_t* player = gameState->players[id];
         if (player != NULL) {
             int row = player_getRow(player);
@@ -630,7 +630,7 @@ char* grid_buildPlayerDisplayString(game_t* gameState, player_t* player)
     }
     
     // Add players to the temporary grid if visible
-    for (int id = 0; id < gameState->numPlayers; id++) {
+    for (int id = 0; id < gameState->playersSeen; id++) {
         player_t* otherPlayer = gameState->players[id];
         if (otherPlayer != NULL) {
             int row = player_getRow(otherPlayer);
