@@ -69,7 +69,7 @@ grid_t* load_map_from_file(const char* filename)
         return NULL;
     }
     
-    bool loaded = grid_load(grid, fp);
+    bool loaded = grid_load(fp);
     fclose(fp);
     
     if (!loaded) {

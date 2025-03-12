@@ -7,8 +7,8 @@
 * Mar 11, 2025
 */
 
-#ifndef __GAMEMODEL_H
-#define __GAMEMODEL_H
+#ifndef __GAME_H
+#define __GAME_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,8 +28,26 @@ extern const int GoldMinNumPiles;
 extern const int GoldMaxNumPiles;
 
 /**************** global types ****************/
-typedef struct game game_t;
-typedef struct gold gold_t;
+// typedef struct game game_t;
+// typedef struct gold gold_t;
+
+typedef struct gold {
+    int row;
+    int col;
+    int amount;
+    player_t* player;  // The player who collected this gold (NULL if not collected)
+} gold_t;
+
+typedef struct game {
+    grid_t* grid;             // Master grid (loaded from the map file)
+    player_t** players;       // Array of pointers to players
+    spectator_t* spectator;   // Current spectator (if any)
+    gold_t** goldPiles;       // Array of gold piles
+    
+    int playersSeen;          // Total number of players seen (joined and left)
+    int numPiles;             // Number of gold piles
+    int goldRemaining;        // Total gold remaining on the grid
+} game_t;
 
 /**************** Public functions ****************/
 
@@ -44,7 +62,7 @@ typedef struct gold gold_t;
 * Notes:
 *   The caller must later call game_delete
 */
-game_t* game_new(const char* filename);
+game_t* game_new(FILE* map);
 
 /**************** game_delete ****************/
 /* Delete the game, freeing all allocated memory.
@@ -109,7 +127,7 @@ bool game_move_player(game_t* game, player_t* player, int new_row, int new_col);
 */
 void game_update_gold(game_t* game);
 
-/**************** collect_gold ****************/
+/**************** game_collectGold ****************/
 /* Collect gold for a specific player.
 * 
 * Caller provides:
@@ -120,7 +138,7 @@ void game_update_gold(game_t* game);
 *   Updates player's purse and the game state if gold is collected
 *   Does nothing if game or player is NULL
 */
-void collect_gold(game_t* game, player_t* player);
+int game_collectGold(game_t* game, player_t* player);
 
 /**************** game_is_over ****************/
 /* Check if the game is over (all gold collected) by checking the goldRemaining field in game.
@@ -200,5 +218,29 @@ spectator_t* game_getSpectator(game_t* game);
 *   -1 if game is NULL
 */
 int game_getGoldRemaining(game_t* game);
+
+/* Build a string representation of the game state for display
+ *
+ * Caller provides:
+ *   Pointer to a game state structure
+ * We return:
+ *   Pointer to a newly allocated string showing the game state, or NULL on error
+ * Notes:
+ *   Includes all players and uncollected gold on the grid (to check if a gold is collected, we check if the gold's player_t struct is NULL)
+ *   Caller must free the returned string when done
+ */
+char* game_buildDisplayString(game_t* gameState);
+
+/* Build a string representation of what a specific player can see
+ *
+ * Caller provides:
+ *   Pointer to a game state structure and pointer to a player
+ * We return:
+ *   Pointer to a newly allocated string showing what the player can see, or NULL on error
+ * Notes:
+ *   Shows only what is visible to that player plus remembered areas
+ *   Caller must free the returned string when done
+ */
+char* game_buildPlayerDisplayString(game_t* gameState, player_t* player);
 
 #endif // __GAMEMODEL_H

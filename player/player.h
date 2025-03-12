@@ -8,8 +8,8 @@
  * @author Team 11 (11xers)
  */
 
-#ifndef PLAYER_H
-#define PLAYER_H
+#ifndef __PLAYER_H
+#define __PLAYER_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,8 +17,8 @@
 #include <stdbool.h>
 
 // include modules
-#include "map.h" // ../map/map.h
-#include "message.h" // ../support/message.h\
+#include "grid.h" // ../grid/grid.h
+#include "message.h" // ../support/message.h
 
 typedef struct player {
     char playerLetter; // A-Z identifying this player
@@ -138,4 +138,4 @@ grid_t* player_getGrid(player_t* player);
  * @return true if the player has left the game, false otherwise
  */
 
-#endif // PLAYER_H
+#endif // __PLAYER_H

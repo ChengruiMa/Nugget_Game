@@ -24,31 +24,18 @@ const int GoldMinNumPiles = 10;
 const int GoldMaxNumPiles = 30;
 
 /**************** types ****************/
-typedef struct gold {
-    int row;
-    int col;
-    int amount;
-    player_t* player;  // The player who collected this gold (NULL if not collected)
-} gold_t;
 
-typedef struct game {
-    grid_t* grid;             // Master grid (loaded from the map file)
-    player_t** players;       // Array of pointers to players
-    spectator_t* spectator;   // Current spectator (if any)
-    gold_t** goldPiles;       // Array of gold piles
-    
-    int playersSeen;          // Total number of players seen (joined and left)
-    int numPiles;             // Number of gold piles
-    int goldRemaining;        // Total gold remaining on the grid
-} game_t;
+/* Printing out the game state */
+char* game_buildDisplayString(game_t* gameState);
+char* game_buildPlayerDisplayString(game_t* gameState, player_t* player);
 
-/**************** function declarations ****************/
+/**************** Local function declarations ****************/
 static void calculateGoldDistribution(game_t* game);
 
 /**************** game_new ****************/
-game_t* game_new(const char* filename) 
+game_t* game_new(FILE* map) 
 {
-    if (map == NULL0) {
+    if (map == NULL) {
         fprintf(stderr, "Error: Invalid parameters in game_new\n");
         return NULL;
     }
@@ -61,7 +48,7 @@ game_t* game_new(const char* filename)
     }
 
     // Initialize game structure
-    game->grid = grid_loadFromFile(filename, false);
+    game->grid = grid_load(map);
     if (game->grid == NULL) {
         fprintf(stderr, "Error: Failed to load grid from file\n");
         free(game);
@@ -69,7 +56,6 @@ game_t* game_new(const char* filename)
     }
 
     // Initialize players array
-    game->numPlayers = 0;
     game->playersSeen = 0;
     game->players = calloc(MaxPlayers, sizeof(player_t*));
     if (game->players == NULL) {
@@ -132,7 +118,7 @@ void game_delete(game_t* game)
 
     // Free players
     if (game->players != NULL) {
-        for (int i = 0; i < game->numPlayers; i++) {
+        for (int i = 0; i < game->playersSeen; i++) {
             if (game->players[i] != NULL) {
                 player_delete(game->players[i]);
             }
@@ -275,21 +261,24 @@ bool game_move_player(game_t* game, player_t* player, int new_row, int new_col)
         return false;
     }
 
+    // get the game's master grid
+    grid_t* grid = game_getGrid(game);
+
     // Check if the new position is valid
-    if (new_row < 0 || new_row >= grid_getRows(game->grid) || 
-        new_col < 0 || new_col >= grid_getCols(game->grid)) {
+    if (new_row < 0 || new_row >= grid_getRows(grid) || 
+        new_col < 0 || new_col >= grid_getCols(grid)) {
         return false;
     }
 
     // Check if the new position is a valid spot to move to (room or passage)
-    char cell = grid_get(game->grid, new_row, new_col);
+    char cell = grid_get(grid, new_row, new_col);
     if (!grid_isRoom(grid, new_row, new_col) && !grid_isPassage(grid, new_row, new_col)) {
         return false;
     }
 
     // Check if the new position is occupied by another player
     player_t* other = NULL;
-    for (int i = 0; i < game->numPlayers; i++) {
+    for (int i = 0; i < game->playersSeen; i++) {
         player_t* p = game->players[i];
         if (p != player && player_getRow(p) == new_row && player_getCol(p) == new_col) {
             other = p;
@@ -310,7 +299,7 @@ bool game_move_player(game_t* game, player_t* player, int new_row, int new_col)
     }
 
     // Check if the player has collected gold
-    collect_gold(game, player);
+    game_collectGold(game, player);
 
     return true;
 }
@@ -323,13 +312,13 @@ void game_update_gold(game_t* game)
     }
 
     // Check each player for gold collection
-    for (int i = 0; i < game->numPlayers; i++) {
-        collect_gold(game, game->players[i]);
+    for (int i = 0; i < game->playersSeen; i++) {
+        game_collectGold(game, game->players[i]);
     }
 }
 
-/**************** collect_gold ****************/
-void collect_gold(game_t* game, player_t* player) 
+/**************** game_collectGold ****************/
+int game_collectGold(game_t* game, player_t* player) 
 {
     if (game == NULL || player == NULL) {
         return;
@@ -345,9 +334,11 @@ void collect_gold(game_t* game, player_t* player)
         // If the pile has gold and the player is on it
         if (pile != NULL && pile->player == NULL && pile->amount > 0 && 
             pile->row == player_row && pile->col == player_col) {
+
+            int goldCollected = pile->amount;
             
             // Add gold to player's purse
-            player_addGold(player, pile->amount);
+            player_addGold(player, goldCollected);
             
             // Update game state
             pile->amount = 0;
@@ -355,8 +346,12 @@ void collect_gold(game_t* game, player_t* player)
             
             // Update grid (replace gold marker with empty spot)
             grid_set(game->grid, player_row, player_col, '.');
+
+            return goldCollected; // make sure this isn't going to be zero
         }
     }
+
+    return -1;
 }
 
 /**************** game_is_over ****************/
@@ -381,7 +376,7 @@ void game_end(game_t* game)
     
     // Print a summary of players and their gold
     printf("Final scores:\n");
-    for (int i = 0; i < game->numPlayers; i++) {
+    for (int i = 0; i < game->playersSeen; i++) {
         player_t* player = game->players[i];
         printf("%c\t%d\t%s\n", 
                 player_getLetter(player), 
@@ -396,7 +391,7 @@ void game_end(game_t* game)
 /**************** game_addSpectator ****************/
 bool game_addSpectator(game_t* game, addr_t from) 
 {
-    if (game == NULL || from == NULL) {
+    if (game == NULL) {
         return false;
     }
 
@@ -415,7 +410,7 @@ bool game_addSpectator(game_t* game, addr_t from)
 /**************** game_getPlayerFromAddress ****************/
 player_t* game_getPlayerFromAddress(game_t* game, const addr_t address) 
 {
-    if (game == NULL || address == NULL) {
+    if (game == NULL) {
         return NULL;
     }
 
@@ -457,4 +452,175 @@ int game_getGoldRemaining(game_t* game)
         return -1;
     }
     return game->goldRemaining;
+}
+
+
+/**************** game_buildDisplayString() ****************/
+char* game_buildDisplayString(game_t* game) 
+{
+    if (game == NULL) {
+        return NULL;
+    }
+    
+    grid_t* grid = game_getGrid(game);
+    if (grid == NULL) {
+        return NULL;
+    }
+
+    if (grid->initialized) {
+        return NULL;
+    }
+    
+    // Calculate required size: each row + newline + null terminator
+    size_t size = grid->nrows * (grid->ncols + 1) + 1;
+    char* str = malloc(size);
+    if (str == NULL) {
+        return NULL;
+    }
+    
+    str[0] = '\0';
+    char line[grid->ncols + 1];  // +1 for null terminator
+    
+    // Create temporary grid to avoid modifying the original
+    grid_t* tempGrid = grid_createPlayerGrid(grid);
+    if (tempGrid == NULL) {
+        free(str);
+        return NULL;
+    }
+    
+    // Add gold to the temporary grid
+    gold_t** goldPiles = game->goldPiles;
+    int numPiles = game->numPiles;
+    for (int i = 0; i < numPiles; i++) {
+        if (goldPiles[i] != NULL && goldPiles[i]->player == NULL) {
+            int row = goldPiles[i]->row; 
+            int col = goldPiles[i]->col;
+            if (grid_get(grid, row, col) == '.') {
+                grid_set(tempGrid, row, col, GRID_GOLD_SPOT);
+            }
+        }
+    }
+    
+    // Add players to the temporary grid
+    for (int id = 0; id < game->playersSeen; id++) {
+        player_t* player = game->players[id];
+        if (player != NULL) {
+            int row = player_getRow(player);
+            int col = player_getCol(player);
+            char symbol = player_getLetter(player);
+            grid_set(tempGrid, row, col, symbol);
+        }
+    }
+    
+    // Build string row by row
+    for (int row = 0; row < grid->nrows; row++) {
+        for (int col = 0; col < grid->ncols; col++) {
+            line[col] = grid_get(tempGrid, row, col);
+        }
+        line[grid->ncols] = '\0';
+        strcat(str, line);
+        strcat(str, "\n");
+    }
+    
+    // Clean up temporary grid
+    grid_delete(tempGrid);
+    
+    return str;
+}
+
+/**************** grid_buildPlayerDisplayString() ****************/
+char* game_buildPlayerDisplayString(game_t* game, player_t* player)
+{
+    if (game == NULL || player == NULL) {
+        return NULL;
+    }
+    
+    // Get player's grid
+    grid_t* playerGrid = player_getGrid(player);
+    if (playerGrid == NULL || !playerGrid->initialized || !playerGrid->hasMemory) {
+        return NULL;
+    }
+    
+    // Calculate required size: each row + newline + null terminator
+    char* str = malloc(playerGrid->nrows * (playerGrid->ncols + 1) + 1);
+    if (str == NULL) {
+        return NULL;
+    }
+    
+    str[0] = '\0';
+    char line[playerGrid->ncols + 1];  // +1 for null terminator
+    
+    // Get player position for visibility calculations
+    point_t* playerPos = point_new(player_getRow(player), player_getCol(player));
+    if (playerPos == NULL) {
+        free(str);
+        return NULL;
+    }
+    
+    // Update visibility from player's current position
+    grid_calculateVisibility(playerGrid, playerPos);
+    
+    // Make a copy with the current player's grid
+    grid_t* tempGrid = grid_createPlayerGrid(playerGrid);
+    if (tempGrid == NULL) {
+        point_delete(playerPos);
+        free(str);
+        return NULL;
+    }
+    
+    // Add gold to the temporary grid if visible
+    gold_t** goldPiles = game->goldPiles;
+    int numPiles = game->numPiles;
+    for (int i = 0; i < numPiles; i++) {
+        if (goldPiles[i] != NULL && goldPiles[i]->player == NULL) {
+            int row = goldPiles[i]->row; 
+            int col = goldPiles[i]->col;
+            if (grid_isPointVisible(playerGrid, row, col) && grid_get(playerGrid, row, col) == '.') {
+                grid_set(tempGrid, row, col, GRID_GOLD_SPOT);
+            }
+        }
+    }
+    
+    // Add players to the temporary grid if visible
+    for (int id = 0; id < game->playersSeen; id++) {
+        player_t* otherPlayer = game->players[id];
+        if (otherPlayer != NULL) {
+            int row = player_getRow(otherPlayer);
+            int col = player_getCol(otherPlayer);
+            
+            // Only show if this spot is visible to the player
+            if (grid_isPointVisible(playerGrid, row, col)) {
+                char symbol = player_getLetter(otherPlayer);
+                grid_set(tempGrid, row, col, symbol);
+            }
+        }
+    }
+    
+    // Build string row by row, using visibility information
+    for (int row = 0; row < playerGrid->nrows; row++) {
+        for (int col = 0; col < playerGrid->ncols; col++) {
+            if (playerGrid->visible[row][col]) {
+                // Spot is currently visible, use tempGrid content (with players and gold)
+                line[col] = grid_get(tempGrid, row, col);
+            } else {
+                // Spot is not visible, use memory if previously seen
+                char remembered = playerGrid->memory[row][col];
+                if (remembered == GRID_GOLD_SPOT) {
+                    // Gold that was seen before but is now out of sight is shown as an empty room
+                    line[col] = '.';
+                } else {
+                    line[col] = remembered;
+                }
+            }
+        }
+        line[playerGrid->ncols] = '\0';
+        strcat(str, line);
+        strcat(str, "\n");
+    }
+    
+    // Clean up
+    grid_delete(tempGrid);
+    point_delete(playerPos);
+    
+    return str;
 }
