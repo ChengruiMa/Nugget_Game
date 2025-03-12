@@ -61,22 +61,13 @@ grid_t* load_map_from_file(const char* filename)
         return NULL;
     }
     
-    // Create a grid with dimensions suitable for the maps provided
-    grid_t* grid = grid_new(30, 100);
+    grid_t* grid = grid_load(fp);
     if (grid == NULL) {
         fclose(fp);
         printf("Error: Could not create grid\n");
         return NULL;
     }
-    
-    bool loaded = grid_load(fp);
     fclose(fp);
-    
-    if (!loaded) {
-        grid_delete(grid);
-        printf("Error: Could not load grid from file\n");
-        return NULL;
-    }
     
     return grid;
 }
