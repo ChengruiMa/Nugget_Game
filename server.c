@@ -124,12 +124,18 @@ initGame(FILE *map)
     if (map == NULL)
     {
         fprintf(stderr, "Error reading map file\n");
-        return 4; // return 4 to indicate error reading map file
+        return NULL; // return 4 to indicate error reading map file
     }
 
     // create game state here?
+    game_t* game = game_new(map);
+    if (game == NULL)
+    {
+        fprintf(stderr, "Error creating game state\n");
+        return NULL;
+    }
 
-    // drop gold across map in various piles (at least GoldMinNumPiles and at most GoldMaxNumPiles); random number of nuggets in each (this is handled in the gold module i'm p sure)
+    return game
 }
 
 /**
@@ -1134,4 +1140,19 @@ int main(int argc, char *argv[])
     }
 
     // wait for messages from clients (start a loop listening for messages)
+    message_loop(
+        game, // game state
+        0.00, // timeout (0.00 for no timeout — wait indefinitely for messages since players might go afk and come back)
+        NULL, // no timeout function
+        NULL, // no input function
+        handleMessage // handle message function
+    )
+
+    // free game state
+    endGame(game);
+
+    // print success message on server
+    fprintf(stderr, "Server shutting down successfully — thanks for hosting!\n");
+
+    return 0;
 }

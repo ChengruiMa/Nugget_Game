@@ -69,7 +69,6 @@ game_t* game_new(FILE* map)
     }
 
     // Initialize players array
-    game->numPlayers = 0;
     game->playersSeen = 0;
     game->players = calloc(MaxPlayers, sizeof(player_t*));
     if (game->players == NULL) {
