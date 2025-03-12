@@ -363,6 +363,8 @@ handleNewSpectator(game_t* game, addr_t from)
     sprintf(message, "GRID %d %d\n", nrows, ncols); // format message as per REQUIREMENTS spec
     message_send(from, message); // send grid message to spectator
     free(message); // free message
+
+    fprintf(stderr, "Spectator joined game!\n");
 }
 
 /**
@@ -440,15 +442,21 @@ static void updateSpectatorDisplay(game_t *game, spectator_t *spectator)
     // char* display = grid_toString(grid); // get grid as string
     // NOTE: BELOW IS SUBJECT TO CHANGE DEPENDING ON MARTIN'S IMPLEMENTATION — LIKELY WILL NEED TO CHANGE/TWEAK
     char *display = game_buildDisplayString(game); // build display string (THIS SHOULD BE A FUNCTION IN THE GRID MODULE @MARTIN)
+    fprintf(stderr, "Built display string!\n");
+    if (display == NULL)
+    {
+        fprintf(stderr, "Error updating spectator display\n");
+        return;
+    }
 
-    char *message = malloc((sizeof(char) * strlen(display)) + 10); // +10 for "DISPLAY \n" and null terminator — should fit in message_MaxBytes according to REQUIREMENTS spec
+    char *message = malloc((sizeof(char) * strlen(display)) + 9); // +10 for "DISPLAY\n" and null terminator — should fit in message_MaxBytes according to REQUIREMENTS spec
     if (message == NULL)
     {
         fprintf(stderr, "Error updating spectator display\n");
         return;
     }
 
-    strcpy(message, "DISPLAY \n");
+    strcpy(message, "DISPLAY\n");
     strcat(message, display);
 
     message_send(spectator->address, message); // send display message to spectator
@@ -472,20 +480,26 @@ static void updatePlayerDisplay(game_t *game, player_t *player)
         return;
     }
 
+    if (player->leftGame)
+    {
+        fprintf(stderr, "Player %c has left game. Skipping their display update.\n", player->playerLetter);
+        return;
+    }
+
     grid_t* playerGrid = player->grid; // get player grid
     point_t *playerPos = point_new(player->row, player->col); // create point_t struct for player position, used in calculate step
     grid_calculateVisibility(playerGrid, playerPos); // calculate player grid visibility
 
     char *display = game_buildPlayerDisplayString(game, player); // build player display string (THIS SHOULD BE A FUNCTION IN THE GRID MODULE @MARTIN)
 
-    char *message = malloc((sizeof(char) * strlen(display)) + 10); // +10 for "DISPLAY \n" and null terminator — should fit in message_MaxBytes according to REQUIREMENTS spec
+    char *message = malloc((sizeof(char) * strlen(display)) + 9); // +10 for "DISPLAY\n" and null terminator — should fit in message_MaxBytes according to REQUIREMENTS spec
     if (message == NULL)
     {
         fprintf(stderr, "Error updating player display\n");
         return;
     }
 
-    strcpy(message, "DISPLAY \n");
+    strcpy(message, "DISPLAY\n");
     strcat(message, display);
 
     message_send(player->address, message); // send display message to player
@@ -740,6 +754,17 @@ void movePlayer(game_t* game, player_t* player, int newRow, int newCol)
     }
 }
 
+void print_addr_t(addr_t addr) {
+    char ip_str[INET_ADDRSTRLEN];  // Buffer for IP address
+
+    // Convert binary IP to string
+    inet_ntop(AF_INET, &addr.sin_addr, ip_str, sizeof(ip_str));
+
+    // Print IP and port (convert port from network to host byte order)
+    fprintf(stderr, "addr_t: %s:%d\n", ip_str, ntohs(addr.sin_port));
+}
+
+
 /**
  * Handles individual key presses from clients (movement and quitting)
  * 
@@ -767,18 +792,19 @@ static void handleKeyPress(game_t *game, const addr_t from, char key)
     if (player == NULL)
     {
         fprintf(stderr, "Error handling key press: could not find player with matching address in game\n");
-
+        fprintf(stderr, "SERVER PLAYER ADDRESS: ");
+        print_addr_t(from);
         // since no player, must be spectator
         // handle spectator quit if key is Q
         if (key == 'Q')
         {
             handleQuit(game, from); // handleQuit should handle both player and spectator quitting
         }
-        else
-        {
-            const char* keyString = (const char[]){key, '\0'};
-            handleMalformedMessage(from, "Message Error: Invalid key message provided", keyString);
-        }
+        // else
+        // {
+        //     // const char* keyString = (const char[]){key, '\0'};
+        //     // handleMalformedMessage(from, "Message Error: Invalid key message provided", keyString);
+        // }
         return;
     }
 
@@ -976,13 +1002,19 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
                 // game->players[game->playersSeen] = newPlayer;
                 // game->playersSeen++;
 
+                if (!game_addPlayer(game, newPlayer))
+                {
+                    fprintf(stderr, "Maximum number of players reached\n");
+                    return false; // not fatal; true ends the message loop
+                }
+
 
                 // immediately send new client the size of the grid in the format "GRID rows cols"
                 char *gridMessage = malloc(sizeof("GRID ") + sizeof(rows) + sizeof(cols) + 2); // +1 for null terminator, +1 for space
                 if (gridMessage == NULL)
                 {
                     fprintf(stderr, "Error sending grid size to new player\n");
-                    return true; // true ends the message loop
+                    return false; // true ends the message loop
                 }
 
                 sprintf(gridMessage, "GRID %d %d", rows, cols); // format message as per REQUIREMENTS spec
@@ -1047,27 +1079,38 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
     // free parsed message
     freeMessage(parsed);
 
+    fprintf(stderr, "Message handled successfully\n");
+
     // update game state for spectator
     updateSpectatorDisplay(game, game->spectator);
+
+    fprintf(stderr, "Updated spectator display\n");
 
     // send updated game state to all players and spectators
     int playersSeen = game->playersSeen;
     for (int i = 0; i < playersSeen; i++)
     {
+
         updatePlayerDisplay(game, game->players[i]);
     }
 
+    fprintf(stderr, "Updated player displays\n");
+
     // send updated golds to all players and spectators
     updateSpectatorGold(game); // maybe condense these two functions into one? thought they'd be more distinct, but maybe not after writing them
+    fprintf(stderr, "Updated spectator gold\n");
     updateAllPlayerGold(game);
+    fprintf(stderr, "Updated all player gold\n");
 
     // check if game is over (i.e., all gold has been collected)
     if (isGameOver(game))
     {
         // handle game over (leaderboards, end game state, etc.)
         handleGameOver(game);
+        fprintf(stderr, "Game over\n");
         return true; // true ends the message loop
     } else {
+        fprintf(stderr, "Game not over\n");
         return false; // false continues the message loop
     }
 }
