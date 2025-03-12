@@ -28,8 +28,26 @@ extern const int GoldMinNumPiles;
 extern const int GoldMaxNumPiles;
 
 /**************** global types ****************/
-typedef struct game game_t;
-typedef struct gold gold_t;
+// typedef struct game game_t;
+// typedef struct gold gold_t;
+
+typedef struct gold {
+    int row;
+    int col;
+    int amount;
+    player_t* player;  // The player who collected this gold (NULL if not collected)
+} gold_t;
+
+typedef struct game {
+    grid_t* grid;             // Master grid (loaded from the map file)
+    player_t** players;       // Array of pointers to players
+    spectator_t* spectator;   // Current spectator (if any)
+    gold_t** goldPiles;       // Array of gold piles
+    
+    int playersSeen;          // Total number of players seen (joined and left)
+    int numPiles;             // Number of gold piles
+    int goldRemaining;        // Total gold remaining on the grid
+} game_t;
 
 /**************** Public functions ****************/
 
@@ -120,7 +138,7 @@ void game_update_gold(game_t* game);
 *   Updates player's purse and the game state if gold is collected
 *   Does nothing if game or player is NULL
 */
-void game_collectGold(game_t* game, player_t* player);
+int game_collectGold(game_t* game, player_t* player);
 
 /**************** game_is_over ****************/
 /* Check if the game is over (all gold collected) by checking the goldRemaining field in game.

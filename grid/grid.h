@@ -25,11 +25,26 @@ extern const char GRID_CORNER_WALL;
 extern const char GRID_GOLD_SPOT;      
 
 /**************** Global types ****************/
-/* Point structure to represent a position on the grid */
-typedef struct point point_t;
+// /* Point structure to represent a position on the grid */
+// typedef struct point point_t;
 
-/* Grid structure to represent the game grid*/
-typedef struct grid grid_t;
+// /* Grid structure to represent the game grid*/
+// typedef struct grid grid_t;
+
+typedef struct point {
+    int row;  // row coordinate
+    int col;  // column coordinate
+} point_t;
+
+typedef struct grid {
+    int nrows;              // number of rows
+    int ncols;              // number of columns
+    char** cells;           // 2D array of characters for the entire grid
+    char** memory;          // 2D array of characters for remembered state
+    bool** visible;         // 2D array of visibility flags
+    bool initialized;       // flag to indicate if grid is initialized successfully
+    bool hasMemory;         // flag to indicate if this grid has memory functionality
+} grid_t;
 
 
 /**************** Public Functions ****************/

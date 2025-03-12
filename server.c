@@ -118,7 +118,7 @@ static int parseArgs(int argc, char *argv[], int *storedSeed, char *map)
  * Inputs:
  * @param map: a pointer to the opened map FILE with map information to be read
  */
-game_t *
+game_t*
 initGame(FILE *map)
 {
     if (map == NULL)
@@ -135,7 +135,7 @@ initGame(FILE *map)
         return NULL;
     }
 
-    return game
+    return game;
 }
 
 /**
@@ -308,7 +308,7 @@ void freeMessage(char **message)
  */
 void sendOK(player_t *player)
 {
-    char *message = malloc(sizeof("OK ") + sizeof(player->letter) + 2); // +1 for null terminator, +1 for new line
+    char *message = malloc(sizeof("OK ") + sizeof(player->playerLetter) + 2); // +1 for null terminator, +1 for new line
     if (message == NULL)
     {
         fprintf(stderr, "Error sending OK message to player\n");
@@ -316,7 +316,7 @@ void sendOK(player_t *player)
     }
 
     strcpy(message, "OK ");
-    strcat(message, player->letter);
+    strcat(message, player->playerLetter);
 
     // send OK w/ player letter to player
     message_send(player->address, message);
@@ -483,7 +483,7 @@ static void updatePlayerDisplay(game_t *game, player_t *player)
 
     free(message);
     free(display);
-    visibility_delete(visibility); // remove once grid/visibility is refactored to keep visibility contained in grid/visibility operations — should not be exposed to users of the grid module
+    // visibility_delete(visibility); // remove once grid/visibility is refactored to keep visibility contained in grid/visibility operations — should not be exposed to users of the grid module
     point_delete(playerPos);       // remove once grid/visibility is refactored to keep visibility contained in grid/visibility operations — should not be exposed to users of the grid module
 }
 
@@ -540,7 +540,7 @@ static void updateAllPlayerGold(game_t* game)
         }
 
         int currentGold = player->purse;
-        int remainingGold = getRemainingGold(game->gold);
+        int remainingGold = getRemainingGold(game);
 
         char* message = malloc(sizeof(char) * 50); // should be enough for message
         if (message == NULL)
@@ -573,7 +573,7 @@ static int getRemainingGold(game_t* game)
     int totalRemaining = 0;
     for (int i = 0; i < game->numPiles; i++)
     {
-        totalRemaining += piles->amount[i];
+        totalRemaining += piles[i]->amount;
     }
 
     return totalRemaining;
@@ -593,7 +593,7 @@ static bool isGameOver(game_t* game)
         return false;
     }
 
-    int remainingGold = getRemainingGold(game->gold);
+    int remainingGold = getRemainingGold(game);
     if (remainingGold == 0)
     {
         return true;
@@ -609,7 +609,7 @@ void sendGoldMessage(game_t* game, player_t* player, int goldCollected) {
     }
 
     int currentGold = player->purse;
-    int remainingGold = getRemainingGold(game->gold);
+    int remainingGold = getRemainingGold(game);
 
     char* message = malloc(sizeof(char) * 50); // should be enough for message
     if (message == NULL) {
@@ -652,8 +652,6 @@ void movePlayer(game_t* game, player_t* player, int newRow, int newCol)
     }
 
     grid_t* playerGrid = player->grid;
-
-    gold_t* gold = game->gold;
 
     player_t** players = game->players;
     int playersSeen = game->playersSeen;
@@ -928,8 +926,8 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
 
             // do we need to reset/initialize a grid for the player? I think so since player_new needs a grid
 
-            int rows = game->grid->rows;
-            int cols = game->grid->cols;
+            int rows = game->grid->nrows;
+            int cols = game->grid->ncols;
 
             // BELOW CREATES PLAYER LETTER
             char playerLetter = 'A' + game->playersSeen; // get player letter based on number of players seen (alphabet is contiguous with ASCII character set, so we can do this)
@@ -1147,7 +1145,7 @@ int main(int argc, char *argv[])
         NULL, // no timeout function
         NULL, // no input function
         handleMessage // handle message function
-    )
+    );
 
     // free game state
     endGame(game);

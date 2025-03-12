@@ -93,7 +93,7 @@ void player_addGold(player_t* player, int goldAmount)
         return;
     }
 
-    player->purse += gold;
+    player->purse += goldAmount;
 }
 
 /**
