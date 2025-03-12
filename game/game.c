@@ -271,7 +271,6 @@ bool game_move_player(game_t* game, player_t* player, int new_row, int new_col)
     }
 
     // Check if the new position is a valid spot to move to (room or passage)
-    char cell = grid_get(grid, new_row, new_col);
     if (!grid_isRoom(grid, new_row, new_col) && !grid_isPassage(grid, new_row, new_col)) {
         return false;
     }
@@ -321,7 +320,7 @@ void game_update_gold(game_t* game)
 int game_collectGold(game_t* game, player_t* player) 
 {
     if (game == NULL || player == NULL) {
-        return;
+        return -1;
     }
 
     int player_row = player_getRow(player);
@@ -381,7 +380,7 @@ void game_end(game_t* game)
         printf("%c\t%d\t%s\n", 
                 player_getLetter(player), 
                 player_getGold(player), 
-                player_getName(player));
+                player_getRealName(player));
     }
     
     // Delete the game
