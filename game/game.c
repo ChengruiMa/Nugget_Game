@@ -589,9 +589,12 @@ char* game_buildPlayerDisplayString(game_t* game, player_t* player)
             int col = player_getCol(otherPlayer);
             
             // Only show if this spot is visible to the player
-            if (grid_isPointVisible(playerGrid, row, col)) {
-                char symbol = player_getLetter(otherPlayer);
-                grid_set(tempGrid, row, col, symbol);
+            if (row == player_getRow(player) && col == player_getCol(player)) {
+                grid_set(tempGrid, row, col, '@');
+            }
+            else if (grid_isPointVisible(playerGrid, row, col)) {
+                    char symbol = player_getLetter(otherPlayer);
+                    grid_set(tempGrid, row, col, symbol);
             }
         }
     }
