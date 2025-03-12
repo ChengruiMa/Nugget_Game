@@ -35,13 +35,10 @@ typedef struct game {
     grid_t* grid;             // Master grid (loaded from the map file)
     player_t** players;       // Array of pointers to players
     spectator_t* spectator;   // Current spectator (if any)
+    gold_t** goldPiles;       // Array of gold piles
     
     int playersSeen;          // Total number of players seen (joined and left)
-    gold_t** goldPiles;       // Array of gold piles
     int numPiles;             // Number of gold piles
-    int numPlayers;           // Current number of players
-    int maxPlayers;           // Maximum allowed players
-    int goldRemaining;        // Amount of gold still uncollected
 } game_t;
 
 /**************** function declarations ****************/
@@ -50,16 +47,9 @@ static void calculate_gold_distribution(game_t* game);
 /**************** game_new ****************/
 game_t* game_new(const char* filename) 
 {
-    if (map == NULL || maxPlayers <= 0) {
+    if (map == NULL0) {
         fprintf(stderr, "Error: Invalid parameters in game_new\n");
         return NULL;
-    }
-
-    // Seed random number generator if not already seeded
-    static bool seeded = false;
-    if (!seeded) {
-        srand((unsigned int)time(NULL));
-        seeded = true;
     }
 
     // Allocate memory for game structure
@@ -78,10 +68,9 @@ game_t* game_new(const char* filename)
     }
 
     // Initialize players array
-    game->maxPlayers = MaxPlayers;
     game->numPlayers = 0;
     game->playersSeen = 0;
-    game->players = calloc(game->maxPlayers, sizeof(player_t*));
+    game->players = calloc(MaxPlayers, sizeof(player_t*));
     if (game->players == NULL) {
         fprintf(stderr, "Error: Failed to allocate memory for players array\n");
         grid_delete(game->grid);
@@ -248,7 +237,7 @@ bool game_add_player(game_t* game, const char* player_name, const char* address)
     }
 
     // Check if the game is full
-    if (game->playersSeen >= game->maxPlayers) {
+    if (game->playersSeen >= MaxPlayers) {
         return false;
     }
 
