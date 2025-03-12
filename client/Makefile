@@ -11,25 +11,25 @@ HDRS = client_state.h display.h network.h
 PROG = client
 
 SUPPORT_DIR = ../support
-COMMON_DIR = ../common
+GRID_DIR = ../grid
 
 SUPPORT_OBJS = $(SUPPORT_DIR)/message.o $(SUPPORT_DIR)/log.o
-COMMON_OBJS = $(COMMON_DIR)/grid.o
+GRID_OBJS = $(GRID_DIR)/grid.o
 
 .PHONY: all clean
 
 all: $(PROG)
 
-$(PROG): $(OBJS) $(SUPPORT_OBJS) $(COMMON_OBJS)
+$(PROG): $(OBJS) $(SUPPORT_OBJS) $(GRID_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 client.o: client.c client_state.h display.h network.h $(SUPPORT_DIR)/message.h $(SUPPORT_DIR)/log.h
-client_state.o: client_state.c client_state.h $(SUPPORT_DIR)/log.h $(COMMON_DIR)/grid.h
+client_state.o: client_state.c client_state.h $(SUPPORT_DIR)/log.h $(GRID_DIR)/grid.h
 display.o: display.c display.h client_state.h $(SUPPORT_DIR)/log.h
 network.o: network.c network.h client_state.h display.h $(SUPPORT_DIR)/message.h $(SUPPORT_DIR)/log.h
 
 %.o: %.c
-	$(CC) $(CFLAGS) -I$(SUPPORT_DIR) -I$(COMMON_DIR) -c $<
+	$(CC) $(CFLAGS) -I$(SUPPORT_DIR) -I$(GRID_DIR) -c $<
 
 clean:
 	rm -f $(PROG) *~ *.o
