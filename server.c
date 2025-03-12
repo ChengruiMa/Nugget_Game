@@ -811,83 +811,83 @@ static void handleKeyPress(game_t *game, const addr_t from, char key)
     // handle key press for player
     switch (key)
     {
-    case 'h':
+    case 'k':
         // move player left, if possible
         // TODO: players might want to be updated to playerList, as outline in implementation spec
         movePlayer(game, player, player->row - 1, player->col); // assuming row is x and col is y (TODO: THE NAMING SHOULD BE CHANGED TO X AND Y @NEAL)
         break;
-    case 'l':
+    case 'j':
         // move player right, if possible
         movePlayer(game, player, player->row + 1, player->col);
         break;
-    case 'j':
+    case 'l':
         // move player up, if possible
         movePlayer(game, player, player->row, player->col + 1);
         break;
-    case 'k':
+    case 'h':
         // move player down, if possible
         movePlayer(game, player, player->row, player->col - 1);
         break;
-    case 'y':
+    case 'u':
         // move player up and left, if possible
         movePlayer(game, player, player->row - 1, player->col + 1);
         break;
-    case 'u':
+    case 'n':
         // move player up and right, if possible
         movePlayer(game, player, player->row + 1, player->col + 1);
         break;
-    case 'b':
+    case 'y':
         // move player down and left, if possible
         movePlayer(game, player, player->row - 1, player->col - 1);
         break;
-    case 'n':
+    case 'b':
         // move player down and right, if possible
         movePlayer(game, player, player->row + 1, player->col - 1);
         break;
     // now the uppercase versions of above, which act as a toggle (i.e., while loop to move in that direction until player runs into wall)
-    case 'H':
+    case 'K':
         while (grid_isRoom(game->grid, player->row - 1, player->col))
         { // pretty sure `grid_isRoom` is basically isEmpty (anything that isn't a wall)
             movePlayer(game, player, player->row - 1, player->col);
         }
         break;
-    case 'L':
+    case 'J':
         while (grid_isRoom(game->grid, player->row + 1, player->col))
         {
             movePlayer(game, player, player->row + 1, player->col);
         }
         break;
-    case 'J':
+    case 'L':
         while (grid_isRoom(game->grid, player->row, player->col + 1))
         {
             movePlayer(game, player, player->row, player->col + 1);
         }
         break;
-    case 'K':
+    case 'H':
         while (grid_isRoom(game->grid, player->row, player->col - 1))
         {
             movePlayer(game, player, player->row, player->col - 1);
         }
         break;
-    case 'Y':
+    case 'U':
         while (grid_isRoom(game->grid, player->row - 1, player->col + 1))
         {
             movePlayer(game, player, player->row - 1, player->col + 1);
         }
         break;
-    case 'U':
+    case 'N':
         while (grid_isRoom(game->grid, player->row + 1, player->col + 1))
         {
             movePlayer(game, player, player->row + 1, player->col + 1);
         }
         break;
-    case 'B':
+    case 'Y':
         while (grid_isRoom(game->grid, player->row - 1, player->col - 1))
         {
             movePlayer(game, player, player->row - 1, player->col - 1);
         }
         break;
-    case 'N':
+    case 'B':
         while (grid_isRoom(game->grid, player->row + 1, player->col - 1))
         {
             movePlayer(game, player, player->row + 1, player->col - 1);
