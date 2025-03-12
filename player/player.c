@@ -123,8 +123,8 @@ char player_getLetter(player_t* player)
 {
     if (player == NULL)
     {
-        fprintf(stderr, "Error getting player letter: player is NULL\n");
-        return NULL;
+        fprintf(stderr, "Invalid player struct provided in player_getLetter\n");
+        return -1;
     }
 
     return player->playerLetter;

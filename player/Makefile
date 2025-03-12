@@ -11,7 +11,10 @@ SUPPORT_DIR = ../support
 
 .PHONY: all clean
 
-all: $(OBJS)
+all: player.a
+
+player.a: $(OBJS)
+	ar cr player.a $(OBJS)
 
 player.o: player.c player.h $(GRID_DIR)/grid.h $(SUPPORT_DIR)/message.h
 	$(CC) $(CFLAGS) -I$(GRID_DIR) -I$(SUPPORT_DIR) -c player.c
