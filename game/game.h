@@ -15,10 +15,10 @@
 #include <string.h>
 
 #include "game.h"
-#include "grid.h"
-#include "spectator.h"
-#include "message.h"
-#include "player.h"
+#include "../grid/grid.h"
+#include "../spectator/spectator.h"
+#include "../support/message.h"
+#include "../player/player.h"
 
 /**************** global constants ****************/
 extern const int MaxNameLength;

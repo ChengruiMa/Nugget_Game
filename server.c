@@ -7,21 +7,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include <ctype.h>
 #include <string.h>
 
-#include "message.h"
-#include "player.h"
-#include "spectator.h"
-#include "game.h"
-#include "grid.h"
-
-/**************** constants ****************/
-const int MaxNameLength = 50;
-const int GoldTotal = 250;
-const int MaxPlayers = 26;
-const int GoldMinNumPiles = 10;
-const int GoldMaxNumPiles = 30;
+#include "game/game.h"
+#include "support/message.h"
+#include "player/player.h"
+#include "spectator/spectator.h"
+#include "grid/grid.h"
 
 // function prototypes
 static int parseArgs(int argc, char *argv[], int *storedSeed, char *map);
@@ -38,7 +32,7 @@ static void updateAllPlayerGold(game_t *game);
 static int getRemainingGold(game_t* game);
 static bool isGameOver(game_t *game);
 static void handleGameOver(game_t *game);
-static void handleMalformedMessage(addr_t from, char *message, char *originalMessage);
+static void handleMalformedMessage(const addr_t from, char *error, const char *message);
 static void sendOK(player_t *player);
 
 // // structs
@@ -235,8 +229,8 @@ static void handleGameOver(game_t *game)
  * Inputs:
  * @param message: the message string to be parsed
  */
-char **
-parseMessage(char *message)
+char**
+parseMessage(const char *message)
 {
     // parse message into an array of strings
     // return array of strings
@@ -247,8 +241,15 @@ parseMessage(char *message)
         return NULL;
     }
 
+    char* messageCopy = strdup(message); // +1 for null terminator
+    if (messageCopy == NULL)
+    {
+        fprintf(stderr, "Error parsing message\n");
+        return NULL;
+    }
+
     // split message into array of strings
-    char **parsed = malloc(sizeof(char *) * strlen(message)); // p sure this will allocate length of msg and not num of words — don't think it rlly matters tho
+    char **parsed = malloc(sizeof(char *) * strlen(messageCopy)); // p sure this will allocate length of msg and not num of words — don't think it rlly matters tho
 
     if (parsed == NULL)
     {
@@ -256,7 +257,7 @@ parseMessage(char *message)
         return NULL;
     }
 
-    char *token = strtok(message, " ");
+    char *token = strtok(messageCopy, " ");
     int i = 0;
 
     while (token != NULL)
@@ -274,6 +275,8 @@ parseMessage(char *message)
     }
 
     parsed[i] = NULL; // set last element to NULL to indicate end of array
+
+    free(messageCopy); // free message copy
 
     return parsed;
 }
@@ -308,7 +311,8 @@ void freeMessage(char **message)
  */
 void sendOK(player_t *player)
 {
-    char *message = malloc(sizeof("OK ") + sizeof(player->playerLetter) + 2); // +1 for null terminator, +1 for new line
+    const char* playerLetter = (const char[]){player->playerLetter, '\0'};
+    char *message = malloc(sizeof("OK ") + sizeof(playerLetter) + 2); // +1 for null terminator, +1 for new line
     if (message == NULL)
     {
         fprintf(stderr, "Error sending OK message to player\n");
@@ -316,7 +320,7 @@ void sendOK(player_t *player)
     }
 
     strcpy(message, "OK ");
-    strcat(message, player->playerLetter);
+    strcat(message, playerLetter);
 
     // send OK w/ player letter to player
     message_send(player->address, message);
@@ -421,16 +425,21 @@ void handleQuit(game_t *game, addr_t from)
  */
 static void updateSpectatorDisplay(game_t *game, spectator_t *spectator)
 {
-    if (game == NULL || spectator == NULL)
+    if (game == NULL)
     {
-        fprintf(stderr, "Invalid parameters passed to updateSpectatorDisplay\n");
+        fprintf(stderr, "Invalid game state passed to updateSpectatorDisplay\n");
+        return;
+    }
+
+    if (spectator == NULL) {
+        fprintf(stderr, "No spectator currently active in game. Skipping their display update.\n");
         return;
     }
 
     grid_t *grid = game->grid;
     // char* display = grid_toString(grid); // get grid as string
     // NOTE: BELOW IS SUBJECT TO CHANGE DEPENDING ON MARTIN'S IMPLEMENTATION — LIKELY WILL NEED TO CHANGE/TWEAK
-    char *display = grid_buildDisplayString(game, grid); // build display string (THIS SHOULD BE A FUNCTION IN THE GRID MODULE @MARTIN)
+    char *display = game_buildDisplayString(game); // build display string (THIS SHOULD BE A FUNCTION IN THE GRID MODULE @MARTIN)
 
     char *message = malloc((sizeof(char) * strlen(display)) + 10); // +10 for "DISPLAY \n" and null terminator — should fit in message_MaxBytes according to REQUIREMENTS spec
     if (message == NULL)
@@ -467,7 +476,7 @@ static void updatePlayerDisplay(game_t *game, player_t *player)
     point_t *playerPos = point_new(player->row, player->col); // create point_t struct for player position, used in calculate step
     grid_calculateVisibility(playerGrid, playerPos); // calculate player grid visibility
 
-    char *display = grid_buildPlayerDisplayString(game, player); // build player display string (THIS SHOULD BE A FUNCTION IN THE GRID MODULE @MARTIN)
+    char *display = game_buildPlayerDisplayString(game, player); // build player display string (THIS SHOULD BE A FUNCTION IN THE GRID MODULE @MARTIN)
 
     char *message = malloc((sizeof(char) * strlen(display)) + 10); // +10 for "DISPLAY \n" and null terminator — should fit in message_MaxBytes according to REQUIREMENTS spec
     if (message == NULL)
@@ -498,11 +507,11 @@ static void updateSpectatorGold(game_t* game)
     spectator_t* spectator = game->spectator;
     if (spectator == NULL)
     {
-        fprintf(stderr, "No spectator currently active in game.\n");
+        fprintf(stderr, "No spectator currently active in game. Skipping their gold update.\n");
         return;
     }
 
-    int remainingGold = getRemainingGold(game->goldPiles);
+    int remainingGold = getRemainingGold(game);
     // int totalGold = game->gold->total;
 
     char* message = malloc(sizeof(char) * 50); // should be enough for message
@@ -746,7 +755,7 @@ static void handleKeyPress(game_t *game, const addr_t from, char key)
     // if valid, move player in that direction
     // if 'Q', remove player from game
 
-    if (game == NULL || key == NULL)
+    if (game == NULL)
     {
         fprintf(stderr, "Error handling key press\n");
         return;
@@ -767,7 +776,8 @@ static void handleKeyPress(game_t *game, const addr_t from, char key)
         }
         else
         {
-            handleMalformedMessage(from, "Message Error: Invalid key message provided", key);
+            const char* keyString = (const char[]){key, '\0'};
+            handleMalformedMessage(from, "Message Error: Invalid key message provided", keyString);
         }
         return;
     }
@@ -951,6 +961,7 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
             // create new player
             player_t *newPlayer = player_new(realName, playerLetter, from, game->grid); // didn't see playerLetter being created in the spec's pseudocode?
 
+
             if (newPlayer == NULL)
             {
                 // delete grid created for player if we created a grid above
@@ -974,10 +985,7 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
                     return true; // true ends the message loop
                 }
 
-                strcpy(gridMessage, "GRID ");
-                strcat(gridMessage, rows);
-                strcat(gridMessage, " ");
-                strcat(gridMessage, cols);
+                sprintf(gridMessage, "GRID %d %d", rows, cols); // format message as per REQUIREMENTS spec
 
                 message_send(from, gridMessage);
                 sendOK(newPlayer); // send OK message to new player
@@ -998,7 +1006,15 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
         }
         else
         {
-            handleKeyPress(game, from, parsed[1]);
+            // make sure key is a single character
+            if (strlen(parsed[1]) != 1)
+            {
+                handleMalformedMessage(from, "Message Error: Invalid key provided", message);
+            }
+            else
+            {
+                handleKeyPress(game, from, parsed[1][0]);
+            }
         }
     }
     else if (strcmp(parsed[0], "SPECTATE") == 0)
@@ -1064,7 +1080,7 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
  * @param error: the error message to send
  * @param message: the original message that was malformed
  */
-static void handleMalformedMessage(const addr_t from, char *error, char *message)
+static void handleMalformedMessage(const addr_t from, char *error, const char *message)
 {
     // build error message (error + message)
     char *errorMessage = malloc(sizeof(error) + sizeof(message) + 4); // +1 for null terminator, +1 for new line + 1 for colon + 1 for tab
@@ -1120,7 +1136,7 @@ int main(int argc, char *argv[])
     FILE *mapFile = fopen(map, "r"); // already checked if file is able to be read in parseArgs, but check again
     if (mapFile == NULL)
     {
-        fprintf(stderr, "Error reading map file: %s\n", mapFile);
+        fprintf(stderr, "Error reading map file: %s\n", map);
         return 4; // return 4 to indicate error reading map file
     }
 

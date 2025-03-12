@@ -6,6 +6,8 @@
 #ifndef __NETWORK_H
 #define __NETWORK_H
 
+#include <arpa/inet.h>  // For inet_ntoa()
+#include <netinet/in.h> // For sockaddr_in
 #include <stdbool.h>
 #include "../support/message.h"
 #include "client_state.h"

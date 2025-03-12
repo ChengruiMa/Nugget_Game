@@ -12,9 +12,9 @@
 #include <string.h>
 #include <time.h>
 #include "game.h"
-#include "grid.h"
-#include "spectator.h"
-#include "player.h"
+#include "../grid/grid.h"
+#include "../spectator/spectator.h"
+#include "../player/player.h"
 
 /**************** constants ****************/
 const int MaxNameLength = 50;

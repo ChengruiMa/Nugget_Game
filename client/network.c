@@ -6,10 +6,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <arpa/inet.h>  // For inet_ntoa()
+#include <netinet/in.h> // For sockaddr_in
+
 #include "../support/message.h"
 #include "../support/log.h"
 #include "display.h"
 #include "network.h"
+
+
+void print_addr_t(addr_t addr) {
+    char ip_str[INET_ADDRSTRLEN];  // Buffer for IP address
+
+    // Convert binary IP to string
+    inet_ntop(AF_INET, &addr.sin_addr, ip_str, sizeof(ip_str));
+
+    // Print IP and port (convert port from network to host byte order)
+    fprintf(stderr, "addr_t: %s:%d\n", ip_str, ntohs(addr.sin_port));
+}
 
 /*
  * Send a PLAY message to the server
@@ -24,6 +38,7 @@ void send_play_message(client_t* client)
     char message[message_MaxBytes]; //format message, "PLAY name"
     snprintf(message, sizeof(message), "PLAY %s", client->playerName);
     
+    print_addr_t(client->serverAddress);
     message_send(client->serverAddress, message); //send msg
 }
 
@@ -66,7 +81,7 @@ void send_key_message(client_t* client, char key)
 bool handle_ok_message(client_t* client, const char* message)
 {
     if (client == NULL || message == NULL) {
-        return true;
+        return true; // fatal
     }
     
     char playerLetter;
@@ -81,7 +96,7 @@ bool handle_ok_message(client_t* client, const char* message)
         log_v(log_buffer);
     }
     
-    return true;
+    return false;
 }
 
 /*
@@ -93,7 +108,7 @@ bool handle_ok_message(client_t* client, const char* message)
 bool handle_grid_message(client_t* client, const char* message)
 {
     if (client == NULL || message == NULL) {
-        return true;
+        return true; // fatal error
     }
     
     int nrows, ncols;
@@ -119,7 +134,7 @@ bool handle_grid_message(client_t* client, const char* message)
         log_v(log_buffer);
     }
     
-    return true;
+    return false;
 }
 
 /*
@@ -131,7 +146,7 @@ bool handle_grid_message(client_t* client, const char* message)
 bool handle_gold_message(client_t* client, const char* message)
 {
     if (client == NULL || message == NULL) {
-        return true;
+        return true; // fatal error
     }
     
     //extract gold values
@@ -151,7 +166,7 @@ bool handle_gold_message(client_t* client, const char* message)
         log_v(log_buffer);
     }
     
-    return true;
+    return false;
 }
 
 /*
@@ -163,12 +178,12 @@ bool handle_gold_message(client_t* client, const char* message)
 bool handle_display_message(client_t* client, const char* message)
 {
     if (client == NULL || message == NULL) {
-        return true;
+        return true; // fatal error
     }
     
     display_grid(client, message); //display grid
     
-    return true;
+    return false;
 }
 
 /*
@@ -180,7 +195,7 @@ bool handle_display_message(client_t* client, const char* message)
 bool handle_quit_message(client_t* client, const char* message)
 {
     if (client == NULL || message == NULL) {
-        return false;
+        return true; // fatal error anyway
     }
     
     const char* reason;
@@ -198,7 +213,7 @@ bool handle_quit_message(client_t* client, const char* message)
     
     printf("%s\n", reason); //print quit message
     
-    return false; //stop the message loop
+    return true; //stop the message loop
 }
 
 /*
@@ -226,5 +241,5 @@ bool handle_error_message(client_t* client, const char* message)
     
     display_status(client, errorMsg); //display error msg
     
-    return true;
+    return false;
 }

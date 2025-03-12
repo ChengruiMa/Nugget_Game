@@ -12,8 +12,8 @@
 #include <stdbool.h>
 
 #include "player.h"
-#include "message.h"
-#include "grid.h"
+#include "../grid/grid.h"
+#include "../support/message.h"
 
 /**
  * Create a new player.

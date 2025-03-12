@@ -145,7 +145,7 @@ static bool handle_message(void *arg, const addr_t from, const char *message)
     
     if (message == NULL) {
         log_v("Received NULL message");
-        return true;
+        return false;
     }
     
     if (!message_isAddr(game->serverAddress)) { //save server address if not already saved
@@ -167,7 +167,7 @@ static bool handle_message(void *arg, const addr_t from, const char *message)
     } else {
         snprintf(log_buffer, sizeof(log_buffer), "Unknown message type: %s", message);
         log_v(log_buffer);
-        return true;
+        return false;
     }
 }
 
