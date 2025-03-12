@@ -12,7 +12,7 @@
 #include <stdbool.h>
 
 #include "spectator.h"
-#include "message.h"
+#include "../support/message.h"
 
 /**
  * Create a new spectator.

@@ -1,80 +1,66 @@
-# Updated Makefile
+# Makefile for 'server' executable
+#
+# Team 11 (11xers), March 2025
 
-# Compiler and flags
-CC      = gcc
-CFLAGS  = -Wall -pedantic -std=c11 -ggdb
-LDFLAGS = -lncurses
+# Executable
+PROG = server
+OBJS = server.o
+LIBS = $(NLIB) $(SLIB)
+RLIBS = $(SLIB)
 
-# Include paths – adjust if your directory structure differs
-INC = -I. -I../support -I../common
+# Dependency Libraries
+NLIB = nuglib.a # Nuggets Library (all modules used in the game)
+S = support
+SLIB = $(S)/$(S).a # Support Library
 
-# Production source files
-SRCS_SERVER = server.c map.c visibility.c player.c message.c
-SRCS_CLIENT = client.c client_state.c display.c network.c map.c visibility.c player.c
+# Compiler and Compilation flags
+CCFLAGS = -Wall -pedantic -std=c11 -ggdb $(TESTING) -I$(SLIB) -I$(NLIB)
+CC = gcc
+MAKE = make
+VALGRIND = valgrind --leak-check=full --show-leak-kinds=all
 
-# Production executables
-NAME_SERVER = server
-NAME_CLIENT = client
+# Uncomment the following to turn on verbose memory logging
+# TESTING=-DMEMTEST # Uncomment to turn on verbose memory logging
 
-# Test source files
-TEST_GRID          = test_grid.c map.c visibility.c player.c
-TEST_PLAYER        = test_player.c map.c player.c
-TEST_VISIBILITY    = test_visibility.c map.c visibility.c
-TEST_CLIENT_STATE  = test_client_state.c client_state.c map.c
-TEST_NETWORK       = test_network.c client_state.c network.c map.c display.c
-TEST_DISPLAY       = test_display.c client_state.c display.c map.c
-TEST_SERVER        = test_server.c server.c map.c visibility.c player.c message.c
+# Phony targets
+.PHONY: all test clean
 
-# Test executables list
-TEST_EXES = test_grid test_player test_visibility test_client_state test_network test_display test_server
+# Default target
+all: $(LIBS) $(PROG)
 
-# Default target: build production executables
-all: $(NAME_SERVER) $(NAME_CLIENT)
+$(PROG): $(OBJS) $(LIBS)
+	$(CC) $(CCFLAGS) $^ -o $@
+	rm -rf $^
 
-# Production build rules
-$(NAME_SERVER): $(SRCS_SERVER:.c=.o)
-	$(CC) $(CFLAGS) $(INC) -o $@ $^ $(LDFLAGS)
+# Dependency Libraries
+$(NLIB): grid/grid.o player/player.o spectator/spectator.o game/game.o
+	ar cr $(NLIB) $^
+# rm -rf $^
 
-$(NAME_CLIENT): $(SRCS_CLIENT:.c=.o)
-	$(CC) $(CFLAGS) $(INC) -o $@ $^ $(LDFLAGS)
+$(SLIB):
+	$(MAKE) -C $(S)
 
-# Generic rule for object files
-%.o: %.c
-	$(CC) $(CFLAGS) $(INC) -c $< -o $@
+# Dependency Objects
+server.o: server.c $(RLIBS)
 
-# Test targets
-test_grid: $(TEST_GRID)
-	$(CC) $(CFLAGS) $(INC) -o $@ $(TEST_GRID)
+grid.o: grid/grid.h
 
-test_player: $(TEST_PLAYER)
-	$(CC) $(CFLAGS) $(INC) -o $@ $(TEST_PLAYER)
+player.o: $(S)/message.h ./grid/grid.h player/player.h
 
-test_visibility: $(TEST_VISIBILITY)
-	$(CC) $(CFLAGS) $(INC) -o $@ $(TEST_VISIBILITY)
+spectator.o: $(S)/message.h spectator/spectator.h
 
-test_client_state: $(TEST_CLIENT_STATE)
-	$(CC) $(CFLAGS) $(INC) -o $@ $(TEST_CLIENT_STATE)
+game.o: $(S)/message.h grid/grid.h player/player.h spectator/spectator.h game/game.h
 
-test_network: $(TEST_NETWORK)
-	$(CC) $(CFLAGS) $(INC) -o $@ $(TEST_NETWORK) $(LDFLAGS)
+# Valgrind
+valgrind: $(PROG)
+	$(VALGRIND) ./$(PROG) ./maps/main.txt
 
-test_display: $(TEST_DISPLAY)
-	$(CC) $(CFLAGS) $(INC) -o $@ $(TEST_DISPLAY) $(LDFLAGS)
+# TODO: Tests
+# Tests
 
-test_server: $(TEST_SERVER)
-	$(CC) $(CFLAGS) $(INC) -o $@ $(TEST_SERVER)
-
-# Integration test target – runs the provided integration test script
-integration: $(NAME_SERVER) $(NAME_CLIENT)
-	./run_integration_tests.sh
-
-# Clean rules
+# Clean up
 clean:
-	rm -f *.o $(NAME_SERVER) $(NAME_CLIENT) $(TEST_EXES)
-
-fclean: clean
-	rm -f $(NAME_SERVER) $(NAME_CLIENT) $(TEST_EXES)
-
-re: fclean all
-
-.PHONY: all clean fclean re integration $(TEST_EXES)
+	rm -f *~ *.o *.dSYM
+	rm -f $(PROG)
+	rm -f $(NLIB)
+	$(MAKE) -C $(S) clean

@@ -12,8 +12,8 @@
 #include <stdbool.h>
 
 #include "player.h"
-#include "message.h"
-#include "grid.h"
+#include "../grid/grid.h"
+#include "../support/message.h"
 
 /**
  * Create a new player.
@@ -123,8 +123,8 @@ char player_getLetter(player_t* player)
 {
     if (player == NULL)
     {
-        fprintf(stderr, "Error getting player letter: player is NULL\n");
-        return NULL;
+        fprintf(stderr, "Invalid player struct provided in player_getLetter\n");
+        return -1;
     }
 
     return player->playerLetter;

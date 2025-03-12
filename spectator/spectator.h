@@ -17,7 +17,7 @@
 #include <stdbool.h>
 
 // include modules
-#include "message.h" // ../support/message.h
+#include "../support/message.h" // ../support/message.h
 
 typedef struct spectator {
     addr_t address; // network address for sending messages

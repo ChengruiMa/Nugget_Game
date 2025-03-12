@@ -52,11 +52,18 @@ client_t* client_new(const char* hostname, int port, const char* playerName)
             return NULL;
         }
     }
+
+    char portStr[6]; // max 5 digits for port + null terminator
+    sprintf(portStr, "%d", port);
+
+    addr_t serverAddress = message_noAddr();
+    message_setAddr(hostname, portStr, &serverAddress);
+
     
     client->playerLetter = '\0'; //initialize other fields
     client->purse = 0;
     client->remainingGold = 0;
-    client->serverAddress = message_noAddr();
+    client->serverAddress = serverAddress;
     client->grid = NULL;
     client->gameWindow = NULL;
     client->lastGoldCollected = 0;

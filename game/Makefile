@@ -4,7 +4,8 @@
 
 CC = gcc
 CFLAGS = -Wall -pedantic -std=c11 -ggdb
-OBJS = game.o gamemodel.o
+OBJS = game.o
+LIB = game.a
 
 # Module's Directories
 GRID_DIR = ../grid
@@ -14,13 +15,14 @@ SUPPORT_DIR = ../support
 
 .PHONY: all clean
 
-all: $(OBJS)
+all: $(LIB)
+
+$(LIB): $(OBJS)
+	ar cr $(LIB) $(OBJS)
 
 game.o: game.c game.h $(GRID_DIR)/grid.h $(SPECTATOR_DIR)/spectator.h $(SUPPORT_DIR)/message.h $(PLAYER_DIR)/player.h
 	$(CC) $(CFLAGS) -I$(GRID_DIR) -I$(SPECTATOR_DIR) -I$(SUPPORT_DIR) -I$(PLAYER_DIR) -c game.c
 
-gamemodel.o: gamemodel.c gamemodel.h game.h $(GRID_DIR)/grid.h $(SPECTATOR_DIR)/spectator.h $(SUPPORT_DIR)/message.h $(PLAYER_DIR)/player.h
-	$(CC) $(CFLAGS) -I$(GRID_DIR) -I$(SPECTATOR_DIR) -I$(SUPPORT_DIR) -I$(PLAYER_DIR) -c gamemodel.c
-
 clean:
 	rm -f *.o *~
+	rm - f$(LIB)
