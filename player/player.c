@@ -47,8 +47,8 @@ player_t* player_new(char* realName, char playerLetter, addr_t address, grid_t* 
     }
 
     // set player position
-    player->row = playerPos->row;
-    player->col = playerPos->col;
+    player->row = point_getRow(playerPos);
+    player->col = point_getCol(playerPos);
 
     grid_t* playerGrid = grid_createPlayerGrid(grid); // initialize player grid (grid but with visibility information / memory of what has been seen for player)
     grid_calculateVisibility(playerGrid, playerPos); // calculate player grid visibility

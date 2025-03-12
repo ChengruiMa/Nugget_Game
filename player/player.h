@@ -17,8 +17,8 @@
 #include <stdbool.h>
 
 // include modules
-#include "grid.h" // ../map/map.h
-#include "message.h" // ../support/message.h\
+#include "grid.h" // ../grid/grid.h
+#include "message.h" // ../support/message.h
 
 typedef struct player {
     char playerLetter; // A-Z identifying this player
