@@ -104,7 +104,7 @@ static bool handle_input(void *arg)
     
     if (key == EOF) { //check for EOF
         send_key_message(game, 'Q');
-        return false;
+        return true;
     }
     
     if (game->isSpectator) { //check if spectator
@@ -129,7 +129,7 @@ static bool handle_input(void *arg)
         }
     }
     
-    return true;
+    return false;
 }
 
 /*
