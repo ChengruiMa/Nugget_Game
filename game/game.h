@@ -201,4 +201,28 @@ spectator_t* game_getSpectator(game_t* game);
 */
 int game_getGoldRemaining(game_t* game);
 
+/* Build a string representation of the game state for display
+ *
+ * Caller provides:
+ *   Pointer to a game state structure
+ * We return:
+ *   Pointer to a newly allocated string showing the game state, or NULL on error
+ * Notes:
+ *   Includes all players and uncollected gold on the grid (to check if a gold is collected, we check if the gold's player_t struct is NULL)
+ *   Caller must free the returned string when done
+ */
+char* grid_buildDisplayString(game_t* gameState);
+
+/* Build a string representation of what a specific player can see
+ *
+ * Caller provides:
+ *   Pointer to a game state structure and pointer to a player
+ * We return:
+ *   Pointer to a newly allocated string showing what the player can see, or NULL on error
+ * Notes:
+ *   Shows only what is visible to that player plus remembered areas
+ *   Caller must free the returned string when done
+ */
+char* grid_buildPlayerDisplayString(game_t* gameState, player_t* player);
+
 #endif // __GAMEMODEL_H
