@@ -23,8 +23,8 @@
 const int MaxNameLength = 50;
 const int GoldTotal = 250;
 const int MaxPlayers = 26;
-const int GoldMinNumPiles = 10;
-const int GoldMaxNumPiles = 30;
+const int GoldMinNumPiles = 1;
+const int GoldMaxNumPiles = 1;
 
 /**************** types ****************/
 
@@ -393,7 +393,7 @@ bool game_addSpectator(game_t* game, addr_t from)
     if (game->spectator != NULL) {
         addr_t oldAddr = spectator_getAddress(game->spectator);
         spectator_sendMessage(game->spectator, "QUIT You have been replaced by a new spectator.\n");
-        
+
         spectator_delete(game->spectator);
         game->spectator = NULL;
     }

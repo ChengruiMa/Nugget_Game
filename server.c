@@ -145,7 +145,7 @@ static void endGame(game_t *game)
         fprintf(stderr, "Error: Invalid game state provided in endGame\n");
         return;
     } // else do below
-
+    fprintf(stderr, "Ending game\n");
     game_delete(game); // free all memory allocated for game state
 }
 
@@ -951,6 +951,7 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
     if (parsed == NULL)
     {
         fprintf(stderr, "Error handling message\n");
+        free((char *)message);
         return true; // true ends the message loop
     }
 
@@ -999,6 +1000,8 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
             if (realName == NULL)
             {
                 fprintf(stderr, "Memory error while creating player name\n");
+                freeMessage(parsed);
+                free((char *)message);
                 return false; // not fatal, continue message loop
             }
             strcpy(realName, parsed[1]); // copy player name from parsed message
@@ -1012,6 +1015,9 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
             {
                 // send error message to client
                 handleMalformedMessage(from, "Message Error: Maximum number of players reached", message);
+                freeMessage(parsed);
+                free((char *)message);
+                free(realName); // free real name
                 return false; // not fatal, continue message loop
             }
 
@@ -1036,6 +1042,10 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
                 if (!game_addPlayer(game, newPlayer))
                 {
                     fprintf(stderr, "Maximum number of players reached\n");
+                    // free
+                    player_delete(newPlayer);
+                    freeMessage(parsed);
+                    free((char *)message);
                     return false; // not fatal; true ends the message loop
                 }
 
@@ -1045,6 +1055,8 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
                 if (gridMessage == NULL)
                 {
                     fprintf(stderr, "Error sending grid size to new player\n");
+                    freeMessage(parsed);
+                    free((char *)message);
                     return false; // true ends the message loop
                 }
 
@@ -1052,6 +1064,7 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
 
                 message_send(from, gridMessage);
                 sendOK(newPlayer); // send OK message to new player
+                free(gridMessage); // free grid message
             }
         }
         else
@@ -1132,6 +1145,8 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
     fprintf(stderr, "Updated spectator gold\n");
     updateAllPlayerGold(game);
     fprintf(stderr, "Updated all player gold\n");
+
+    // free((char *)message); // need to cast message to free it since it's a const char*
 
     // check if game is over (i.e., all gold has been collected)
     if (isGameOver(game))
