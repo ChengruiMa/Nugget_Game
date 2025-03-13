@@ -1,7 +1,6 @@
 # Maps
 
 This directory contains maps for the Nuggets game.
-Feel free to add your own.
 
 * `big.txt`: a very large map
 * `challenge.txt`: a very tricky map
@@ -11,8 +10,9 @@ Feel free to add your own.
 * `main.txt`: an interesting map for playing and testing.
 * `narrow.txt`: a very narrow map that will fit in a very narrow window; what happens to the top line of your client's display?
 * `small.txt`: a simple, small map; also too-few empty spots.
+* `newMap.txt`: a medium map that team 11 made.
 
-Several maps were contributed buy CS50 teams:
+Several maps were contributed by CS50 teams:
 
 * `contrib19s`: maps contributed by student teams in 2019S.
 * `contrib21s`: maps contributed by student teams in 2021S.
