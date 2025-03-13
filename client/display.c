@@ -87,12 +87,39 @@ bool display_check_size(client_t* client)
         clear();
         mvprintw(0, 0, "Terminal window too small, you need at least %d rows x %d cols",
                  requiredRows, requiredCols);
-        mvprintw(1, 0, "Current window size – %d rows x %d cols", rows, cols);
+        mvprintw(1, 0, "Current window size: %d rows x %d cols", rows, cols);
         mvprintw(2, 0, "Please resize your terminal and press any key to continue...");
         refresh();
         getch(); //wait for a keystroke
+        
+        // After resize, reinitialize the window
+        endwin();
+        refresh();
+        clear();
+        
+        // Get new dimensions
+        getmaxyx(stdscr, rows, cols);
+        if (rows < requiredRows || cols < requiredCols) {
+            return false; // Still too small
+        }
+    }
+    
+    // Delete old window if it exists
+    if (client->gameWindow != NULL) {
+        delwin(client->gameWindow);
+    }
+    
+    // Create new game window with current dimensions
+    int gridRows = grid_getRows(client->grid);
+    int gridCols = grid_getCols(client->grid);
+    client->gameWindow = newwin(gridRows, gridCols, STATUS_HEIGHT, 0);
+    
+    if (client->gameWindow == NULL) {
         return false;
     }
+    
+    refresh();
+    wrefresh(client->gameWindow);
     
     return true;
 }
@@ -108,9 +135,9 @@ void display_status(client_t* client, const char* message)
         return;
     }
 
-    int cols;
-    getmaxyx(stdscr, cols, cols); // Get screen width
-
+    int rows, cols;
+    getmaxyx(stdscr, rows, cols); // Get screen dimensions correctly
+    
     // Print the left-side status
     move(0, 0);
     if (client->isSpectator) {
