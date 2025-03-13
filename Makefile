@@ -6,7 +6,7 @@
 PROG = server
 OBJS = server.o
 LIBS = $(NLIB) $(SLIB)
-RLIBS = $(SLIB)
+RLIBS = $(SLIB) -lm
 
 # Dependency Libraries
 NLIB = nuglib.a # Nuggets Library (all modules used in the game)
@@ -26,11 +26,11 @@ VALGRIND = valgrind --leak-check=full --show-leak-kinds=all
 .PHONY: all test clean
 
 # Default target
-all: $(LIBS) $(PROG)
+all: $(RLIBS) $(PROG)
 
-$(PROG): $(OBJS) $(LIBS)
-	$(CC) $(CCFLAGS) $^ -o $@
-	rm -rf $^
+$(PROG): $(OBJS) $(RLIBS)
+	$(CC) $(CCFLAGS) $^ $(NLIB) $(RLIBS) -o $@
+	rm -rf $(OBJS) $(NLIB)
 
 # Dependency Libraries
 $(NLIB): grid/grid.o player/player.o spectator/spectator.o game/game.o
@@ -41,7 +41,7 @@ $(SLIB):
 	$(MAKE) -C $(S)
 
 # Dependency Objects
-server.o: server.c $(RLIBS)
+server.o: server.c $(NLIB)
 
 grid.o: grid/grid.h
 
