@@ -151,6 +151,12 @@ Where:
 - Uppercase versions (e.g., `H`, `L`) move in that direction until hitting a wall
 - `Q` - Quit the game
 
+In addition to the requirement spec, we also allow the following keys for simplicity. Note that capitalizing these `WASD` keys won't TP the player across the map.:
+- `a` - Move left
+- `d` - Move right
+- `s` - Move down
+- `w` - Move up
+
 ### Spectator Controls:
 - `Q` - Quit spectating
 
