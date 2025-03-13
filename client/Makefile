@@ -2,7 +2,7 @@
 
 CC = gcc
 CFLAGS = -Wall -pedantic -std=c11 -ggdb
-LIBS = -lncurses
+LIBS = -lm -lncurses
 
 SRCS = client.c client_state.c display.c network.c
 OBJS = $(SRCS:.c=.o)

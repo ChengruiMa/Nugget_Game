@@ -182,32 +182,3 @@ void display_grid(client_t* client, const char* displayString)
     
     wrefresh(client->gameWindow); //update the display
 }
-
-/*
- * Print a message to the user and wait for confirmation
- * @param format format string for printf
- * @param ... arguments for printf
- */
-void display_message(const char* format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    
-    int rows, cols;
-    getmaxyx(stdscr, rows, cols);
-    
-    move(rows - 1, 0); //display msg
-    clrtoeol();
-    
-    vw_printw(stdscr, format, args); //format and print msg
-    printw(" [Press any key to continue]");
-    
-    refresh();
-    getch();
-    
-    move(rows - 1, 0); //clear msg
-    clrtoeol();
-    refresh();
-    
-    va_end(args);
-}

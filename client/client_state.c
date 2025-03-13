@@ -3,6 +3,8 @@
  *
  */
 
+#define _POSIX_C_SOURCE 200809L // for strdup (strdup is a POSIX function, and while strdup will compile/make just fine on a recent Mac, Ubuntu seems to throw warning without this definition — likely a glibc version thing / how plank is configured, but alas)
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,7 +55,7 @@ client_t* client_new(const char* hostname, int port, const char* playerName)
         }
     }
 
-    char portStr[6]; // max 5 digits for port + null terminator
+    char portStr[12]; // max 5 digits for port + null terminator
     sprintf(portStr, "%d", port);
 
     addr_t serverAddress = message_noAddr();

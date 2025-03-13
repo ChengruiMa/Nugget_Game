@@ -44,11 +44,4 @@ void display_status(client_t* client, const char* message);
  */
 void display_grid(client_t* client, const char* displayString);
 
-/*
- * Print a message to the user and wait for confirmation
- * @param format format string for printf
- * @param ... arguments for printf
- */
-void display_message(const char* format, ...);
-
 #endif // __DISPLAY_H

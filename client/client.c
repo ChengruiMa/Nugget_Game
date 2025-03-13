@@ -170,8 +170,8 @@ static bool handle_message(void *arg, const addr_t from, const char *message)
     } else if (strncmp(message, "ERROR ", 6) == 0) {
         return handle_error_message(game, message);
     } else {
-        // snprintf(log_buffer, sizeof(log_buffer), "Unknown message type: %s", message);
-        // log_v(log_buffer);
+        snprintf(log_buffer, sizeof(log_buffer), "Unknown message type: %s", message);
+        log_v(log_buffer);
         return false;
     }
 }

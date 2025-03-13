@@ -44,3 +44,6 @@ TAGS
 .vscode
 
 server
+
+# log files
+client/client.log

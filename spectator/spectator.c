@@ -67,3 +67,21 @@ void spectator_sendMessage(spectator_t* spectator, char* message)
 
     message_send(spectator->address, message);
 }
+
+/**
+ * Get the network address of a spectator.
+ * 
+ * @param spectator: the spectator to get the address of
+ * 
+ * @return the network address of the spectator
+ */
+addr_t spectator_getAddress(spectator_t* spectator)
+{
+    if (spectator == NULL)
+    {
+        fprintf(stderr, "Error getting address of spectator: spectator is NULL\n");
+        return (addr_t){0}; // Return an empty address — this is not a valid address, but it is a valid return value
+    }
+
+    return spectator->address;
+}
