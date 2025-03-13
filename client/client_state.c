@@ -87,7 +87,7 @@ void client_delete(client_t* client)
         free(client->hostname);
     }
     
-    if (client->playerName != NULL) {
+    if (!client->isSpectator && client->playerName != NULL) {
         free(client->playerName);
     }
     

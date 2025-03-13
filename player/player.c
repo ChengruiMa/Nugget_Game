@@ -57,6 +57,8 @@ player_t* player_new(char* realName, char playerLetter, addr_t address, grid_t* 
     player->leftGame = false;
     player->purse = 0;
 
+    free(playerPos); // free player position
+
     return player;
 }
 

@@ -7,6 +7,7 @@ LIBS = -lm -lncurses
 SRCS = client.c client_state.c display.c network.c
 OBJS = $(SRCS:.c=.o)
 HDRS = client_state.h display.h network.h
+VALGRIND = valgrind --leak-check=full --show-leak-kinds=all
 
 PROG = client
 
@@ -30,6 +31,10 @@ network.o: network.c network.h client_state.h display.h $(SUPPORT_DIR)/message.h
 
 %.o: %.c
 	$(CC) $(CFLAGS) -I$(SUPPORT_DIR) -I$(GRID_DIR) -c $<
+
+# Valgrind
+valgrind: $(PROG)
+	$(VALGRIND) ./$(PROG) 35230 zac
 
 clean:
 	rm -f $(PROG) *~ *.o
