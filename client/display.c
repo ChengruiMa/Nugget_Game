@@ -87,12 +87,59 @@ bool display_check_size(client_t* client)
         clear();
         mvprintw(0, 0, "Terminal window too small, you need at least %d rows x %d cols",
                  requiredRows, requiredCols);
-        mvprintw(1, 0, "Current window size – %d rows x %d cols", rows, cols);
+        mvprintw(1, 0, "Current window size: %d rows x %d cols", rows, cols);
         mvprintw(2, 0, "Please resize your terminal and press any key to continue...");
         refresh();
         getch(); //wait for a keystroke
+        
+        //reinitialize ncurses
+        endwin();
+        refresh();  //restore terminal
+        
+        //reinitialize ncurses
+        initscr();
+        cbreak();
+        noecho();
+        curs_set(0);
+        keypad(stdscr, TRUE);
+        
+        //reinitialize colors
+        if (has_colors()) {
+            start_color();
+            init_pair(1, COLOR_YELLOW, COLOR_BLACK);
+            init_pair(2, COLOR_GREEN, COLOR_BLACK);
+            init_pair(3, COLOR_BLUE, COLOR_BLACK);
+            init_pair(4, COLOR_WHITE, COLOR_BLACK);
+        }
+        
+        clear();
+        
+        //get new dimensions
+        getmaxyx(stdscr, rows, cols);
+        if (rows < requiredRows || cols < requiredCols) {
+            return false; // Still too small
+        }
+    }
+    
+    //delete old window if it exists
+    if (client->gameWindow != NULL) {
+        delwin(client->gameWindow);
+        client->gameWindow = NULL;
+    }
+    
+    //create new game window with current dimensions
+    int gridRows = grid_getRows(client->grid);
+    int gridCols = grid_getCols(client->grid);
+    client->gameWindow = newwin(gridRows, gridCols, STATUS_HEIGHT, 0);
+    
+    if (client->gameWindow == NULL) {
         return false;
     }
+    
+    //refrsh
+    clear();
+    refresh();
+    wrefresh(client->gameWindow);
     
     return true;
 }
@@ -108,10 +155,10 @@ void display_status(client_t* client, const char* message)
         return;
     }
 
-    int cols;
-    getmaxyx(stdscr, cols, cols); // Get screen width
-
-    // Print the left-side status
+    int rows, cols;
+    getmaxyx(stdscr, rows, cols); 
+    
+    //print the left-side status
     move(0, 0);
     if (client->isSpectator) {
         printw("Spectator: %d nuggets unclaimed.", client->remainingGold);
@@ -120,12 +167,12 @@ void display_status(client_t* client, const char* message)
                client->playerLetter, client->purse, client->remainingGold);
     }
 
-    // Print the right-side message only if it's not NULL
+    //print the right-side message only if it's not NULL
     if (message != NULL) {
         mvprintw(0, cols - strlen(message) - 2, "%s", message);
     }
 
-    refresh(); // Update the display
+    refresh(); //update the display
 }
 
 /*
@@ -135,8 +182,15 @@ void display_status(client_t* client, const char* message)
  */
 void display_grid(client_t* client, const char* displayString)
 {
-    if (client == NULL || client->gameWindow == NULL || displayString == NULL) {
+    if (client == NULL || displayString == NULL) {
         return;
+    }
+    
+    // If window doesn't exist or needs resize, check and recreate it
+    if (client->gameWindow == NULL || !display_check_size(client)) {
+        if (!display_check_size(client)) {
+            return;
+        }
     }
     
     werase(client->gameWindow); //clear game window
@@ -160,7 +214,6 @@ void display_grid(client_t* client, const char* displayString)
                     wattron(client->gameWindow, COLOR_PAIR(2)); //current player
                 } else if (ch >= 'A' && ch <= 'Z') {
                     wattron(client->gameWindow, COLOR_PAIR(3)); //other players
-                    wattron(client->gameWindow, COLOR_PAIR(3));
                 } else if (ch == '+' || ch == '-' || ch == '|') {
                     wattron(client->gameWindow, COLOR_PAIR(4)); //walls and boundaries
                 }
@@ -180,5 +233,7 @@ void display_grid(client_t* client, const char* displayString)
         row++;
     }
     
-    wrefresh(client->gameWindow); //update the display
+    // Make sure both the main screen and game window are refreshed
+    refresh();
+    wrefresh(client->gameWindow);
 }
