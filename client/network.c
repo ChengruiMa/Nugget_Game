@@ -38,7 +38,6 @@ void send_play_message(client_t* client)
     char message[message_MaxBytes]; //format message, "PLAY name"
     snprintf(message, sizeof(message), "PLAY %s", client->playerName);
     
-    print_addr_t(client->serverAddress);
     message_send(client->serverAddress, message); //send msg
 }
 
