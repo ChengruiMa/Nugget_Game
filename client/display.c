@@ -107,24 +107,25 @@ void display_status(client_t* client, const char* message)
     if (client == NULL) {
         return;
     }
-    
-    move(0, 0); //clear the status line
-    clrtoeol();
-    
+
+    int cols;
+    getmaxyx(stdscr, cols, cols); // Get screen width
+
+    // Print the left-side status
+    move(0, 0);
     if (client->isSpectator) {
-        mvprintw(0, 0, "Spectator: %d nuggets unclaimed.", client->remainingGold);
+        printw("Spectator: %d nuggets unclaimed.", client->remainingGold);
     } else {
-        mvprintw(0, 0, "Player %c has %d nuggets (%d nuggets unclaimed).",
-                 client->playerLetter, client->purse, client->remainingGold);
+        printw("Player %c has %d nuggets (%d nuggets unclaimed).",
+               client->playerLetter, client->purse, client->remainingGold);
     }
-    
+
+    // Print the right-side message only if it's not NULL
     if (message != NULL) {
-        int cols;
-        getmaxyx(stdscr, cols, cols); //get screen width
         mvprintw(0, cols - strlen(message) - 2, "%s", message);
     }
-    
-    refresh(); //update the display
+
+    refresh(); // Update the display
 }
 
 /*
