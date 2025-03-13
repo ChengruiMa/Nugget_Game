@@ -815,19 +815,27 @@ static void handleKeyPress(game_t *game, const addr_t from, char key)
     switch (key)
     {
     case 'k':
+    case 'w':
+    case 'W':
         // move player left, if possible
         // TODO: players might want to be updated to playerList, as outline in implementation spec
         movePlayer(game, player, player->row - 1, player->col); // assuming row is x and col is y (TODO: THE NAMING SHOULD BE CHANGED TO X AND Y @NEAL)
         break;
     case 'j':
+    case 's':
+    case 'S':
         // move player right, if possible
         movePlayer(game, player, player->row + 1, player->col);
         break;
     case 'l':
+    case 'd':
+    case 'D':
         // move player up, if possible
         movePlayer(game, player, player->row, player->col + 1);
         break;
     case 'h':
+    case 'a':
+    case 'A':
         // move player down, if possible
         movePlayer(game, player, player->row, player->col - 1);
         break;

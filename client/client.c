@@ -125,7 +125,7 @@ static bool handle_input(void *arg)
             key == 'y' || key == 'Y' ||
             key == 'u' || key == 'U' ||
             key == 'b' || key == 'B' ||
-            key == 'n' || key == 'N') {
+            key == 'n' || key == 'N' || key == 'w' || key == 'W' || key == 'a' || key == 'A' || key == 's' || key == 'S' || key == 'd' || key == 'D') {
             send_key_message(game, key);
         } 
         // else {
