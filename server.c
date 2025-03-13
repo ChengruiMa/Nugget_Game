@@ -363,8 +363,6 @@ handleNewSpectator(game_t* game, addr_t from)
     sprintf(message, "GRID %d %d\n", nrows, ncols); // format message as per REQUIREMENTS spec
     message_send(from, message); // send grid message to spectator
     free(message); // free message
-
-    fprintf(stderr, "Spectator joined game!\n");
 }
 
 /**
@@ -442,7 +440,6 @@ static void updateSpectatorDisplay(game_t *game, spectator_t *spectator)
     // char* display = grid_toString(grid); // get grid as string
     // NOTE: BELOW IS SUBJECT TO CHANGE DEPENDING ON MARTIN'S IMPLEMENTATION — LIKELY WILL NEED TO CHANGE/TWEAK
     char *display = game_buildDisplayString(game); // build display string (THIS SHOULD BE A FUNCTION IN THE GRID MODULE @MARTIN)
-    fprintf(stderr, "Built display string!\n");
     if (display == NULL)
     {
         fprintf(stderr, "Error updating spectator display\n");
@@ -769,7 +766,6 @@ void movePlayer(game_t* game, player_t* player, int newRow, int newCol)
 
     updatePlayerDisplay(game, player);
 
-    fprintf(stderr, "Player %s moved to %d, %d\n", player->realName, player->row, player->col);
 }
 
 void print_addr_t(addr_t addr) {
@@ -810,8 +806,6 @@ static void handleKeyPress(game_t *game, const addr_t from, char key)
     if (player == NULL)
     {
         fprintf(stderr, "Error handling key press: could not find player with matching address in game\n");
-        fprintf(stderr, "SERVER PLAYER ADDRESS: ");
-        print_addr_t(from);
         // since no player, must be spectator
         // handle spectator quit if key is Q
         if (key == 'Q')
@@ -940,7 +934,7 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
 {
     if (arg == NULL || message == NULL)
     {
-        fprintf(stderr, "\033[0;31mFATAL Error handling message: client or game does not exist (probably game, make sure it is initialized!) \033[0m\n");
+        fprintf(stderr, "\033[0;91mFATAL Error handling message: client or game does not exist (probably game, make sure it is initialized!) \033[0m\n");
         return true; // true ends the message loop, as defined in the message module (false does not)
     }
 
@@ -950,9 +944,9 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
 
     if (parsed == NULL)
     {
-        fprintf(stderr, "Error handling message\n");
+        fprintf(stderr, "\033[93mWARNING: Error handling message\033[0m\n");
         free((char *)message);
-        return true; // true ends the message loop
+        return false; // non fatal
     }
 
     // handle message based on parsed message
@@ -999,7 +993,7 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
             char* realName = malloc(sizeof(char) * MaxNameLength); // should be enough for player name
             if (realName == NULL)
             {
-                fprintf(stderr, "Memory error while creating player name\n");
+                fprintf(stderr, "\033[93mWARNING: Memory error while creating player name\033[0m\n");
                 freeMessage(parsed);
                 free((char *)message);
                 return false; // not fatal, continue message loop
@@ -1041,7 +1035,7 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
 
                 if (!game_addPlayer(game, newPlayer))
                 {
-                    fprintf(stderr, "Maximum number of players reached\n");
+                    fprintf(stderr, "\033[93mMaximum number of players reached\033[0m\n");
                     // free
                     player_delete(newPlayer);
                     freeMessage(parsed);
@@ -1054,7 +1048,7 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
                 char *gridMessage = malloc(sizeof("GRID ") + sizeof(rows) + sizeof(cols) + 2); // +1 for null terminator, +1 for space
                 if (gridMessage == NULL)
                 {
-                    fprintf(stderr, "Error sending grid size to new player\n");
+                    fprintf(stderr, "\033[93mError sending grid size to new player\033[0m\n");
                     freeMessage(parsed);
                     free((char *)message);
                     return false; // true ends the message loop
@@ -1123,12 +1117,8 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
     // free parsed message
     freeMessage(parsed);
 
-    fprintf(stderr, "Message handled successfully\n");
-
     // update game state for spectator
     updateSpectatorDisplay(game, game->spectator);
-
-    fprintf(stderr, "Updated spectator display\n");
 
     // send updated game state to all players and spectators
     int playersSeen = game->playersSeen;
@@ -1138,13 +1128,9 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
         updatePlayerDisplay(game, game->players[i]);
     }
 
-    fprintf(stderr, "Updated player displays\n");
-
     // send updated golds to all players and spectators
     updateSpectatorGold(game); // maybe condense these two functions into one? thought they'd be more distinct, but maybe not after writing them
-    fprintf(stderr, "Updated spectator gold\n");
     updateAllPlayerGold(game);
-    fprintf(stderr, "Updated all player gold\n");
 
     // free((char *)message); // need to cast message to free it since it's a const char*
 
@@ -1153,10 +1139,8 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
     {
         // handle game over (leaderboards, end game state, etc.)
         handleGameOver(game);
-        fprintf(stderr, "Game over\n");
         return true; // true ends the message loop
     } else {
-        fprintf(stderr, "Game not over\n");
         return false; // false continues the message loop
     }
 }
@@ -1175,7 +1159,7 @@ static void handleMalformedMessage(const addr_t from, char *error, const char *m
     char *errorMessage = malloc(sizeof(error) + sizeof(message) + 4); // +1 for null terminator, +1 for new line + 1 for colon + 1 for tab
     if (errorMessage == NULL)
     {
-        fprintf(stderr, "Error handling malformed message\n");
+        fprintf(stderr, "\033[93mWARNING: Error handling malformed message\033[0m\n");
         return;
     }
 
@@ -1207,7 +1191,7 @@ int main(int argc, char *argv[])
 
     if (parseArgsReturnCode != 0)
     {
-        fprintf(stderr, "Exiting server with return code: %d\n", parseArgsReturnCode);
+        fprintf(stderr, "\033[93mExiting server with return code: %d\033[0m\n", parseArgsReturnCode);
         return parseArgsReturnCode;
     }
 
@@ -1225,7 +1209,7 @@ int main(int argc, char *argv[])
     FILE *mapFile = fopen(map, "r"); // already checked if file is able to be read in parseArgs, but check again
     if (mapFile == NULL)
     {
-        fprintf(stderr, "Error reading map file: %s\n", map);
+        fprintf(stderr, "\033[0;91mError reading map file: %s\033[0m\n", map);
         return 4; // return 4 to indicate error reading map file
     }
 
@@ -1239,7 +1223,7 @@ int main(int argc, char *argv[])
     int port = message_init(stderr);
     if (port == 0)
     {
-        fprintf(stderr, "Failed to initialize server. Possibly no open ports?\n");
+        fprintf(stderr, "\033[0;91mFailed to initialize server. Possibly no open ports?\033[0n\n");
         return 5; // return 5 to indicate error initializing server
     }
 
@@ -1256,7 +1240,7 @@ int main(int argc, char *argv[])
     endGame(game);
 
     // print success message on server
-    fprintf(stderr, "Server shutting down successfully — thanks for hosting!\n");
+    fprintf(stderr, "\033[92mServer shutting down successfully — thanks for hosting!\033[0m\n");
 
     return 0;
 }
