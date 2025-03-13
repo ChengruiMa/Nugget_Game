@@ -765,6 +765,17 @@ void movePlayer(game_t* game, player_t* player, int newRow, int newCol)
     }
 
     updatePlayerDisplay(game, player);
+    
+    // update all gold locations for all players
+    for (int i = 0; i < playersSeen; i++) {
+        player_t* otherPlayer = players[i];
+        if (otherPlayer == NULL) {
+            fprintf(stderr, "Error updating player gold: player is NULL\n");
+            continue;
+        }
+
+        updatePlayerDisplay(game, otherPlayer);
+    }
 
 }
 
