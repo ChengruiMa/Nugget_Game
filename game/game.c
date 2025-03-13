@@ -23,8 +23,8 @@
 const int MaxNameLength = 50;
 const int GoldTotal = 250;
 const int MaxPlayers = 26;
-const int GoldMinNumPiles = 1;
-const int GoldMaxNumPiles = 1;
+const int GoldMinNumPiles = 10;
+const int GoldMaxNumPiles = 30;
 
 /**************** types ****************/
 
