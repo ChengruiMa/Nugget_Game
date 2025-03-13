@@ -170,6 +170,9 @@ void display_status(client_t* client, const char* message)
     //print the right-side message only if it's not NULL
     if (message != NULL) {
         mvprintw(0, cols - strlen(message) - 2, "%s", message);
+        
+        // use rows int so we don't get no unused def warning
+        rows = rows;
     }
 
     refresh(); //update the display
