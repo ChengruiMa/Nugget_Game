@@ -768,6 +768,8 @@ void movePlayer(game_t* game, player_t* player, int newRow, int newCol)
     }
 
     updatePlayerDisplay(game, player);
+
+    fprintf(stderr, "Player %s moved to %d, %d\n", player->realName, player->row, player->col);
 }
 
 void print_addr_t(addr_t addr) {
@@ -993,7 +995,12 @@ bool handleMessage(void *arg, const addr_t from, const char *message)
             char playerLetter = 'A' + game->playersSeen; // get player letter based on number of players seen (alphabet is contiguous with ASCII character set, so we can do this)
 
             // make player name
-            char realName[MaxNameLength];
+            char* realName = malloc(sizeof(char) * MaxNameLength); // should be enough for player name
+            if (realName == NULL)
+            {
+                fprintf(stderr, "Memory error while creating player name\n");
+                return false; // not fatal, continue message loop
+            }
             strcpy(realName, parsed[1]); // copy player name from parsed message
 
             // generate random starting position for player (handled by player_new according to IMPLEMENTATION SPEC, so commented out for now)

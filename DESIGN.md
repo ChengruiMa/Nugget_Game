@@ -238,7 +238,6 @@ Key functions:
 - `display_cleanup()`: Clean up ncurses
 - `display_grid()`: Display the game grid
 - `display_status()`: Update status line
-- `display_message()`: Show temporary message
 - `display_checkSize()`: Check if window is large enough
 
 

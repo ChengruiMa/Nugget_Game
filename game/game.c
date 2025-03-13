@@ -391,6 +391,9 @@ bool game_addSpectator(game_t* game, addr_t from)
 
     // If there's already a spectator, delete it first
     if (game->spectator != NULL) {
+        addr_t oldAddr = spectator_getAddress(game->spectator);
+        spectator_sendMessage(game->spectator, "QUIT You have been replaced by a new spectator.\n");
+        
         spectator_delete(game->spectator);
         game->spectator = NULL;
     }

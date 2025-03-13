@@ -42,3 +42,8 @@ TAGS
 
 # vscode settings
 .vscode
+
+server
+
+# log files
+client/client.log

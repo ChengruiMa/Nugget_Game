@@ -48,4 +48,13 @@ void spectator_delete(spectator_t* spectator);
  */
 void spectator_sendMessage(spectator_t* spectator, char* message);
 
+/**
+ * Get the network address of a spectator.
+ * 
+ * @param spectator: the spectator to get the address of
+ * 
+ * @return the network address of the spectator
+ */
+addr_t spectator_getAddress(spectator_t* spectator);
+
 #endif // SPECTATOR_H
