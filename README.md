@@ -1,6 +1,4 @@
 # Nuggets Game
-## Team 11
-## CS50, Winter 2025
 
 ## Overview
 
